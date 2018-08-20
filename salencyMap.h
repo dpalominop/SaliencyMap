@@ -8,7 +8,7 @@
 #include <stdio.h> 
 #include <math.h>
 #include "kernel.h"
-#include "Filter\Filter.h"
+#include "Filter/Filter.h"
 #include "utils.h"
 
 #define NUMBER_OF_LEVELS 9
@@ -45,6 +45,8 @@ private:
 	int rRows, rCols;  // Real size
 	int  rows, cols;  // Square size
 
+	int startRealR, startRealC;
+
 	// Principal functions
 	void getPyramids();
 	void reductionFeatures();
@@ -79,7 +81,7 @@ void salencyMap::getData() {
 	---------
  */
 	cv::Mat image, padImg;
-	image = cv::imread("oso.jpg", CV_LOAD_IMAGE_COLOR);
+	image = cv::imread("images/oso.jpg", CV_LOAD_IMAGE_COLOR);
 
 	if (!image.data){
 		std::cout << "Could not open or find the image" << std::endl;
@@ -132,6 +134,9 @@ void salencyMap::getData() {
 	int startR = rRows - (rows - pad2R);
 	int startC = rCols - (cols - pad2C);
 
+	startRealR = pad1R;
+	startRealC = pad1C;
+
 	// Copy image
 	for (i = 0, ip = pad1R;i < rRows;++i, ++ip) {
 		for (j = 0, jp = pad1C;j < rCols;++j, ++jp) {
@@ -173,7 +178,7 @@ void salencyMap::getData() {
 	----------
  */
 	for (int k = 0; k < NUMBER_OF_LEVELS;++k){
-		_I  [k] = allocate(rows,cols);
+		_I  [k] = allocate(rows, cols);
 		_O0 [k] = allocate(rows, cols); _O45 [k] = allocate(rows, cols);
 		_O90[k] = allocate(rows, cols); _O135[k] = allocate(rows, cols);
 		_R  [k] = allocate(rows, cols); _G   [k] = allocate(rows, cols);
@@ -218,12 +223,14 @@ void salencyMap::getData() {
 
 		}
 	}
-
 }
 
 void salencyMap::run(){
 	this->getPyramids();
 	this->reductionFeatures();
+
+
+	
 }
 
 void salencyMap::getPyramids() {
@@ -245,48 +252,11 @@ void salencyMap::getPyramids() {
 		gauss.convolution(_G[k - 1], rows, cols, _G[k], THREAD_COUNT, 2);
 		gauss.convolution(_B[k - 1], rows, cols, _B[k], THREAD_COUNT, 2);
 		gauss.convolution(_Y[k - 1], rows, cols, _Y[k], THREAD_COUNT, 2);
+		
 	}
 	
 }
 
-void salencyMap::reductionPyramid(double***pyramid, double **reduction) {
-	reductionPyramid(pyramid, reduction, 2, 5, 6);
-	reductionPyramid(pyramid, reduction, 3, 6, 7);
-	reductionPyramid(pyramid, reduction, 4, 7, 8);
-}
-
-
-void salencyMap::reductionPyramid(double***pyramid, double **reduction, int sup, int inf1, int inf2) {
-	double **imSI1, **imSI2;
-	double _norm, _max, _mean;
-	double coeff1, coeff2;
-
-	imSI1 = allocate(rows, cols);
-	imSI2 = allocate(rows, cols);
-
-	centerSurroundDiff(pyramid, imSI1, sup, inf1);
-	centerSurroundDiff(pyramid, imSI2, sup, inf2);
-	
-	norm2Array(imSI1, _norm, rows, cols);
-	  maxArray(imSI1, _max , rows, cols);
-	 meanArray(imSI1, _mean, rows, cols);
-	coeff1 = (_max - _mean)*(_max - _mean) / _norm;
-
-	norm2Array(imSI2, _norm, rows, cols);
-	  maxArray(imSI2, _max , rows, cols);
-	 meanArray(imSI2, _mean, rows, cols);
-	coeff2 = (_max - _mean)*(_max - _mean) / _norm;
-
-	for (int i = 0; i < rows; ++i) {
-		for (int j = 0; j < rows; ++j) {
-			reduction[i][j] += coeff1 * imSI1[i][j];
-			reduction[i][j] += coeff2 * imSI2[i][j];
-		}
-	}
-	
-	//cleanMemory(imSI1, rows);
-	//cleanMemory(imSI2, rows);
-}
 
 
 void salencyMap::reductionFeatures() {
@@ -312,20 +282,91 @@ void salencyMap::reductionFeatures() {
 	}
 	
 	reductionPyramid(_I  ,  I );
-	reductionPyramid(_R  ,  R ); reductionPyramid(_G   , G   );
-	reductionPyramid(_B  ,  B ); reductionPyramid(_Y   , Y   );
 	reductionPyramid(_O0 , O0 ); reductionPyramid(_O45 , O45 );
 	reductionPyramid(_O90, O90); reductionPyramid(_O135, O135);
+	reductionPyramid(_R  ,  R ); reductionPyramid(_G   , G   );
+	reductionPyramid(_B  ,  B ); reductionPyramid(_Y   , Y   );
+
+	double **salency;
+	salency = allocate(rRows, rCols);
+
+	for (int i = 0, ip = startRealR; i < rRows; ++i, ++ip) {
+		for (int j = 0, jp = startRealC; j < rCols; ++j, ++jp) {
+			salency[i][j] = I[ip][jp] + O0[ip][jp] + O90[ip][jp] + O45[ip][jp] + O135[ip][jp] + R[ip][jp] + G[ip][jp] + B[ip][jp]  + Y[ip][jp];
+		}
+	}
+
+	double maxSalency, minSalency;
+	maxArray(salency,maxSalency,rRows,rCols,THREAD_COUNT);
+	minArray(salency,minSalency,rRows,rCols,THREAD_COUNT);
+
+	double coeff = 255/(maxSalency-minSalency);
+
+	Mat out = cv::Mat(rRows, rCols, CV_8UC1);
+	for (int i = 0; i < rRows; i++) {
+		for (int j = 0; j < rCols; j++) {
+			out.at<uchar>(i, j) = (uchar)( coeff*(salency[i][j]-minSalency) );
+		}
+	}
+
+	imshow("No quiero jalar!",out);
+	waitKey(0);
+}
+
+
+
+void salencyMap::reductionPyramid(double***pyramid, double **reduction) {
+	reductionPyramid(pyramid, reduction, 2, 5, 6);
+	reductionPyramid(pyramid, reduction, 3, 6, 7);
+	reductionPyramid(pyramid, reduction, 4, 7, 8);
+}
+
+
+void salencyMap::reductionPyramid(double***pyramid, double **reduction, int sup, int inf1, int inf2) {
+	double **imSI1, **imSI2;
+	double _norm, _max, _mean;
+	double coeff1, coeff2;
+
+	imSI1 = allocate(rows, cols);
+	imSI2 = allocate(rows, cols);
+
+	centerSurroundDiff(pyramid, imSI1, sup, inf1);
+	centerSurroundDiff(pyramid, imSI2, sup, inf2);
+	
+	norm2Array(imSI1, _norm, rows, cols, THREAD_COUNT);
+	  maxArray(imSI1, _max , rows, cols, THREAD_COUNT);
+	 meanArray(imSI1, _mean, rows, cols, THREAD_COUNT);
+	coeff1 = (_max - _mean)*(_max - _mean) / _norm;
+
+	norm2Array(imSI2, _norm, rows, cols, THREAD_COUNT);
+	  maxArray(imSI2, _max , rows, cols, THREAD_COUNT);
+	 meanArray(imSI2, _mean, rows, cols, THREAD_COUNT);
+	coeff2 = (_max - _mean)*(_max - _mean) / _norm;
+
+
+	for (int i = 0; i < rows; ++i) {
+		for (int j = 0; j < cols; ++j) {
+			reduction[i][j] += coeff1 * imSI1[i][j];
+			reduction[i][j] += coeff2 * imSI2[i][j];
+		}
+	}
+	
+	Filter::deleteMemory(imSI1, rows,cols);
+	Filter::deleteMemory(imSI2, rows,cols);
 }
 
 void salencyMap::centerSurroundDiff(double***pyramid, double** difference,int firstLevel, int secondLevel) {
 	double **Ifs;
+	double **rawDiff;
 	Ifs = allocate(rows, cols);
-	//Ifs = interpolation(_I[firstLevel], pow(2, secondLevel- firstLevel) );
+	rawDiff = allocate(rows, cols);
+	//interpolation(_I[firstLevel], rows, cols, Ifs, pow(2, secondLevel- firstLevel), THREAD_COUNT);
 	absDifference(difference, _I[firstLevel],Ifs,rows,cols);
 
-	//difference = interpolation(difference, pow(2,firstLevel));
-	//difference = interpolation(difference, pow(2,firstLevel));
+	//interpolation(rawDiff, rows, cols, difference, pow(2, firstLevel), THREAD_COUNT);
+
+	Filter::deleteMemory(    Ifs,rows,cols);
+	Filter::deleteMemory(rawDiff,rows,cols);
 }
 
 void salencyMap::absDifference(double** out, double** first, double** second, int rows, int cols) {
