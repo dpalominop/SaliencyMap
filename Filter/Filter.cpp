@@ -19,9 +19,9 @@ Filter::~Filter() {
 }
 
 Filter::Filter(double kernel[][dim_kernel]) {
-	ASSERT(length(kernel) == dim_kernel);
+	//ASSERT(length(kernel) == dim_kernel);
 
-	klength = length(kernel);
+	klength = dim_kernel;// length(kernel);
 	if (reserveMemory(mkernel, klength, klength)) {
 		setKernel(kernel);
 		std::cout << "Kernel created" << std::endl;
@@ -45,9 +45,9 @@ Filter::Filter(double** kernel, int n) {
 }
 
 bool Filter::setKernel(double kernel[][dim_kernel]) {
-	ASSERT(length(kernel) == dim_kernel);
+	//ASSERT(length(kernel) == dim_kernel);
 
-	klength = length(kernel);
+	klength = dim_kernel;
 	for (int i = 0; i < klength; i++) {
 		for (int j = 0; j < klength; j++) {
 			mkernel[i][j] = kernel[i][j];
@@ -144,6 +144,16 @@ bool Filter::convolution(double** image, int x_length, int y_length, double** re
 	}
 
 	deleteMemory(mImage, x_mi_length, y_mi_length);
+
+	double** result_k;
+
+	reserveMemory(result_k, x_length, y_length);
+	growthMatrix(result,x_length/2,y_length/2,result_k,2,thread_count);
+
+	deleteMemory(result, x_length, y_length);
+
+	result = result_k;
+
 	return true;
 }
 
