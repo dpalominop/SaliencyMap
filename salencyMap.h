@@ -186,6 +186,7 @@ void salencyMap::getData() {
 	double r, g, b;
 	double aux;
 
+#   pragma omp parallel for collapse(2) num_threads(THREAD_COUNT)
 	for (i = 0; i < rows; i++) {
 		for (j = 0; j < cols; j++) {
 			// Get values
@@ -219,7 +220,7 @@ void salencyMap::getData() {
 
 void salencyMap::run(){
 	this->getPyramids();
-	//this->reductionFeatures();
+	this->reductionFeatures();
 }
 
 void salencyMap::getPyramids() {
@@ -297,6 +298,7 @@ void salencyMap::reductionFeatures() {
 	O0  = allocate(rows, cols); O45  = allocate(rows, cols);
 	O90 = allocate(rows, cols); O135 = allocate(rows, cols);
 
+#   pragma omp parallel for collapse(2) num_threads(THREAD_COUNT)
 	for (int i = 0; i < rows; ++i) {
 		for (int j = 0; j < rows; ++j) {
 			I  [i][j] = 0;
@@ -326,6 +328,8 @@ void salencyMap::centerSurroundDiff(double***pyramid, double** difference,int fi
 
 void salencyMap::absDifference(double** out, double** first, double** second, int rows, int cols) {
 	double a, b;
+
+#   pragma omp parallel for collapse(2) num_threads(THREAD_COUNT)
 	for (int i = 0; i < rows; ++i) {
 		for (int j = 0; j < cols; ++j) {
 			a =  first[i][j];
