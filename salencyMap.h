@@ -1,4 +1,6 @@
-#pragma once
+
+#ifndef SALENCYMAP_H
+#define SALENCYMAP_H
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -338,3 +340,5 @@ void salencyMap::absDifference(double** out, double** first, double** second, in
 		}
 	}
 }
+
+#endif

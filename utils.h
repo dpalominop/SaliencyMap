@@ -1,4 +1,6 @@
-#pragma once
+
+#ifndef UTILS_H
+#define UTILS_H
 
 #include <math.h>
 
@@ -82,3 +84,4 @@ void norm2Array(double **arr, double &norm, int rows, int cols) {
 	norm = sqrt(norma1*normaInf);
 }
 
+#endif
