@@ -27,10 +27,12 @@ int main(int argc, char** argv) {
 	double** kernel;
 	double** image;
 	double** result;
+	double** resultx2;
 	
 	Filter::reserveMemory(kernel, dim_kernel, dim_kernel);
 	Filter::reserveMemory(image, dim_image, dim_image);
 	Filter::reserveMemory(result, dim_image, dim_image);
+	Filter::reserveMemory(resultx2, dim_image*2, dim_image*2);
 
 	Filter::generateData(kernel, dim_kernel, dim_kernel);
 	Filter::generateData(image, dim_image, dim_image);
@@ -46,7 +48,7 @@ int main(int argc, char** argv) {
 
 	cout << "-------------------------------" << endl;
 	time_init = omp_get_wtime();
-	gb.convolution(image, dim_image, dim_image, result, thread_count, 1);
+	gb.convolution(image, dim_image, dim_image, result, 1, thread_count);
 	time_final = omp_get_wtime();
 
 	if (show) {
@@ -58,7 +60,7 @@ int main(int argc, char** argv) {
 
 	cout << "-------------------------------" << endl;
 	time_init = omp_get_wtime();
-	gb.convolution(image, dim_image, dim_image, result, thread_count, 2);
+	gb.convolution(image, dim_image, dim_image, result, 2, thread_count);
 	time_final = omp_get_wtime();
 
 	if (show) {
@@ -70,7 +72,7 @@ int main(int argc, char** argv) {
 
 	cout << "-------------------------------" << endl;
 	time_init = omp_get_wtime();
-	gb.convolution(image, dim_image, dim_image, result, thread_count, 3);
+	gb.convolution(image, dim_image, dim_image, result, 3, thread_count);
 	time_final = omp_get_wtime();
 
 	if (show) {
@@ -80,9 +82,14 @@ int main(int argc, char** argv) {
 
 	cout << "Minimal Total Time: " << time_final - time_init << endl;
 
+	cout << "-------------------------------" << endl;
+	Filter::growthMatrix(image, dim_image, dim_image, resultx2, 2, thread_count);
+	Filter::showData(resultx2, dim_image * 2, dim_image * 2);
+
 	Filter::deleteMemory(kernel, dim_kernel, dim_kernel);
 	Filter::deleteMemory(image, dim_image, dim_image);
 	Filter::deleteMemory(result, dim_image, dim_image);
+	Filter::deleteMemory(resultx2, dim_image*2, dim_image*2);
 
 	return 0;
 }

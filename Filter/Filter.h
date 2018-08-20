@@ -7,8 +7,8 @@
 // Created on  : 19 ago. 2018
 //============================================================================
 
-#ifndef GAUSSIANBLUR_H
-#define GAUSSIANBLUR_H
+#ifndef FILTER_H
+#define FILTER_H
 
 #include <cstdlib>
 #include <iostream>
@@ -36,7 +36,7 @@ public:
 	bool setKernel(double kernel[][dim_kernel]);
 	bool setKernel(double** kernel, int n);
 	bool showKernel();
-	bool convolution(double** image, int x_length, int y_length, double** result, int thread_count, int step);
+	bool convolution(double** image, int x_length, int y_length, double** result, int step, int thread_count);
 
 //Static methods
 public:
@@ -46,6 +46,8 @@ public:
 
 	static bool deleteMemory(double** &matrix, int x, int y);
 	static bool reserveMemory(double** &matrix, int x, int y);
+
+	static bool growthMatrix(double** matrix, int x, int y, double** &result, int k, int thread_count);
 
 };
 
