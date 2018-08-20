@@ -11,18 +11,18 @@
 
 Filter::Filter() {
 	klength = dim_kernel;
-	reserveMemory(mkernel, klength);
+	reserveMemory(mkernel, klength, klength);
 }
 
 Filter::~Filter() {
-	deleteMemory(mkernel, klength);
+	deleteMemory(mkernel, klength, klength);
 }
 
 Filter::Filter(double kernel[][dim_kernel]) {
 	ASSERT(length(kernel) == dim_kernel);
 
 	klength = length(kernel);
-	if (reserveMemory(mkernel, klength)) {
+	if (reserveMemory(mkernel, klength, klength)) {
 		setKernel(kernel);
 		std::cout << "Kernel created" << std::endl;
 	}
@@ -35,7 +35,7 @@ Filter::Filter(double** kernel, int n) {
 	ASSERT(n == dim_kernel);
 
 	klength = n;
-	if (reserveMemory(mkernel, klength)) {
+	if (reserveMemory(mkernel, klength, klength)) {
 		setKernel(kernel, n);
 		std::cout << "Kernel created" << std::endl;
 	}
@@ -68,31 +68,33 @@ bool Filter::setKernel(double** kernel, int n) {
 	return true;
 }
 
-bool Filter::convolution(double** image, int i_length, double** result, int thread_count, int step)
+bool Filter::convolution(double** image, int x_length, int y_length, double** result, int thread_count, int step)
 {
 	double** mImage;
-	int mi_length = i_length + 2*(klength/2);
-	reserveMemory(mImage, mi_length);
+	int x_mi_length = x_length + 2*(klength/2);
+	int y_mi_length = y_length + 2*(klength / 2);
+	reserveMemory(mImage, x_mi_length, y_mi_length);
 
 #pragma omp parallel for num_threads(thread_count) shared(mImage)
-	for (int i = 0; i < mi_length; i++) {
-		std::fill_n(mImage[i], mi_length, 0);
+	for (int i = 0; i < x_mi_length; i++) {
+		std::fill_n(mImage[i], y_mi_length, 0);
 	}
 
 	int li_mImage = klength / 2;
-	int ls_mImage = mi_length - li_mImage;
+	int x_ls_mImage = x_mi_length - li_mImage;
+	int y_ls_mImage = y_mi_length - li_mImage;
 
 #pragma omp parallel for collapse(2) num_threads(thread_count) shared(mImage, image)
-	for (int i = li_mImage; i < ls_mImage; i++) {
-		for (int j = li_mImage; j < ls_mImage; j++) {
+	for (int i = li_mImage; i < x_ls_mImage; i++) {
+		for (int j = li_mImage; j < y_ls_mImage; j++) {
 			mImage[i][j] = image[i - 2][j - 2];
 		}
 	}
 
 	//Cuadrado central
 #pragma omp parallel for collapse(2) num_threads(thread_count) shared(mkernel, mImage, result, thread_count, step)
-	for (int i = li_mImage; i < ls_mImage; i+=step) {
-		for (int j = li_mImage; j < ls_mImage; j+= step) {
+	for (int i = li_mImage; i < x_ls_mImage; i+=step) {
+		for (int j = li_mImage; j < y_ls_mImage; j+= step) {
 			double acumulador = 0;
 			double* krow;
 			double* irow;
@@ -141,14 +143,15 @@ bool Filter::convolution(double** image, int i_length, double** result, int thre
 		}
 	}
 
+	deleteMemory(mImage, x_mi_length, y_mi_length);
 	return true;
 }
 
-bool Filter::reserveMemory(double** &matrix, int n) {
+bool Filter::reserveMemory(double** &matrix, int x, int y) {
 
-	matrix = new double*[n];
-	for (int i = 0; i < n; i++) {
-		matrix[i] = new double[n];
+	matrix = new double*[x];
+	for (int i = 0; i < x; i++) {
+		matrix[i] = new double[y];
 	}
 
 	ASSERT(matrix != NULL);
@@ -156,8 +159,8 @@ bool Filter::reserveMemory(double** &matrix, int n) {
 	return true;
 }
 
-bool Filter::deleteMemory(double** &matrix, int n) {
-	for (int i = 0; i < n; i++) {
+bool Filter::deleteMemory(double** &matrix, int x, int y) {
+	for (int i = 0; i < x; i++) {
 		delete[] matrix[i];
 	}
 
@@ -166,11 +169,11 @@ bool Filter::deleteMemory(double** &matrix, int n) {
 	return true;
 }
 
-bool Filter::generateData(double** &matrix, int n) {
+bool Filter::generateData(double** &matrix, int x, int y) {
 	srand(time(NULL));
 
-	for (int i = 0; i < n; i++) {
-		for (int j = 0; j < n; j++) {
+	for (int i = 0; i < x; i++) {
+		for (int j = 0; j < y; j++) {
 			matrix[i][j] = rand() % 3;
 		}
 	}
@@ -178,10 +181,10 @@ bool Filter::generateData(double** &matrix, int n) {
 	return false;
 }
 
-bool Filter::showData(double** result, int n) {
-	for (int i = 0; i < n; i++)
+bool Filter::showData(double** result, int x, int y) {
+	for (int i = 0; i < x; i++)
 	{
-		for (int j = 0; j < n; j++)
+		for (int j = 0; j < y; j++)
 		{
 			std::cout << " " << result[i][j];
 		}

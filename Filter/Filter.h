@@ -36,16 +36,16 @@ public:
 	bool setKernel(double kernel[][dim_kernel]);
 	bool setKernel(double** kernel, int n);
 	bool showKernel();
-	bool convolution(double** image, int i_length, double** result, int thread_count, int step);
+	bool convolution(double** image, int x_length, int y_length, double** result, int thread_count, int step);
 
 //Static methods
 public:
 
-	static bool showData(double** result, int n);
-	static bool generateData(double** &matrix, int n);
+	static bool showData(double** result, int x, int y);
+	static bool generateData(double** &matrix, int x, int y);
 
-	static bool deleteMemory(double** &matrix, int n);
-	static bool reserveMemory(double** &matrix, int n);
+	static bool deleteMemory(double** &matrix, int x, int y);
+	static bool reserveMemory(double** &matrix, int x, int y);
 
 };
 
