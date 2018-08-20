@@ -376,3 +376,20 @@ bool Filter::showData(double** result, int n) {
 
 	return true;
 }
+
+bool Filter::showKernel() {
+	std::cout << "------------------" << std::endl;
+	std::cout << "Kernel used: " << std::endl;
+
+	for (int i = 0; i < klength; i++)
+	{
+		for (int j = 0; j < klength; j++)
+		{
+			std::cout << " " << mkernel[i][j];
+		}
+		std::cout << std::endl;
+	}
+	std::cout << "------------------" << std::endl;
+
+	return true;
+}

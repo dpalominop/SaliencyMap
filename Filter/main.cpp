@@ -5,8 +5,6 @@ using namespace std;
 
 int main(int argc, char** argv) {
 
-	Filter gb;
-
 	int thread_count;
 	bool show = false;
 
@@ -23,36 +21,29 @@ int main(int argc, char** argv) {
 		}
 	}
 
+	Filter gb;
+	double time_init = 0;
+	double time_final = 0;
 	double** kernel;
 	double** image;
 	double** result;
-
-	kernel = new double*[dim_kernel];
-	for (int i = 0; i < dim_kernel; i++) {
-		kernel[i] = new double[dim_kernel];
-	}
-
-	image = new double*[dim_image];
-	for (int i = 0; i < dim_image; i++) {
-		image[i] = new double[dim_image];
-	}
-
-	result = new double*[dim_image];
-	for (int i = 0; i < dim_image; i++) {
-		result[i] = new double[dim_image];
-	}
+	
+	Filter::reserveMemory(kernel, dim_kernel);
+	Filter::reserveMemory(image, dim_image);
+	Filter::reserveMemory(result, dim_image);
 
 	Filter::generateData(kernel, dim_kernel);
 	Filter::generateData(image, dim_image);
 
 	//omp_set_nested (1);
 	gb.setKernel(kernel, dim_kernel);
-	double time_init = omp_get_wtime();
-	gb.convolution(image, result, dim_image, thread_count);
-	double time_final = omp_get_wtime();
+	gb.showKernel();
 
-	double n_elapsed = time_final - time_init;
-	cout << "Minimal Total Time: " << n_elapsed << endl;
+	time_init = omp_get_wtime();
+	gb.convolution(image, result, dim_image, thread_count);
+	time_final = omp_get_wtime();
+
+	cout << "Minimal Total Time: " << time_final - time_init << endl;
 
 	if (show) {
 		Filter::showData(kernel, dim_kernel);
@@ -60,23 +51,9 @@ int main(int argc, char** argv) {
 		Filter::showData(result, dim_image);
 	}
 
-	for (int i = 0; i < dim_kernel; i++) {
-		delete[] kernel[i];
-	}
-
-	delete[] kernel;
-
-	for (int i = 0; i < dim_image; i++) {
-		delete[] image[i];
-	}
-
-	delete[] image;
-
-	for (int i = 0; i < dim_image; i++) {
-		delete[] result[i];
-	}
-
-	delete[] result;
+	Filter::deleteMemory(kernel, dim_kernel);
+	Filter::deleteMemory(image, dim_image);
+	Filter::deleteMemory(result, dim_image);
 
 	return 0;
 }
