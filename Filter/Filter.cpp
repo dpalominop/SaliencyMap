@@ -68,21 +68,37 @@ bool Filter::setKernel(double** kernel, int n) {
 	return true;
 }
 
-bool Filter::convolution(double** image, double** result, int i_length, int thread_count)
+bool Filter::convolution(double** image, int i_length, double** result, int thread_count, int step)
 {
-	int li_image = dim_kernel / 2;
-	int ls_image = i_length - li_image;
+	double** mImage;
+	int mi_length = i_length + 2*(klength/2);
+	reserveMemory(mImage, mi_length);
+
+#pragma omp parallel for num_threads(thread_count) shared(mImage)
+	for (int i = 0; i < mi_length; i++) {
+		std::fill_n(mImage[i], mi_length, 0);
+	}
+
+	int li_mImage = klength / 2;
+	int ls_mImage = mi_length - li_mImage;
+
+#pragma omp parallel for collapse(2) num_threads(thread_count) shared(mImage, image)
+	for (int i = li_mImage; i < ls_mImage; i++) {
+		for (int j = li_mImage; j < ls_mImage; j++) {
+			mImage[i][j] = image[i - 2][j - 2];
+		}
+	}
 
 	//Cuadrado central
-#pragma omp parallel for collapse(2) num_threads(thread_count) shared(mkernel, image, result, thread_count)
-	for (int i = 2; i < ls_image; i++) {
-		for (int j = 2; j < ls_image; j++) {
+#pragma omp parallel for collapse(2) num_threads(thread_count) shared(mkernel, mImage, result, thread_count, step)
+	for (int i = li_mImage; i < ls_mImage; i+=step) {
+		for (int j = li_mImage; j < ls_mImage; j+= step) {
 			double acumulador = 0;
 			double* krow;
 			double* irow;
 
 			krow = mkernel[0];
-			irow = image[i - 2];
+			irow = mImage[i - 2];
 			acumulador += krow[0] * irow[j + -2];
 			acumulador += krow[1] * irow[j + -1];
 			acumulador += krow[2] * irow[j + 0];
@@ -90,7 +106,7 @@ bool Filter::convolution(double** image, double** result, int i_length, int thre
 			acumulador += krow[4] * irow[j + 2];
 
 			krow = mkernel[1];
-			irow = image[i - 1];
+			irow = mImage[i - 1];
 			acumulador += krow[0] * irow[j + -2];
 			acumulador += krow[1] * irow[j + -1];
 			acumulador += krow[2] * irow[j + 0];
@@ -98,7 +114,7 @@ bool Filter::convolution(double** image, double** result, int i_length, int thre
 			acumulador += krow[4] * irow[j + 2];
 
 			krow = mkernel[2];
-			irow = image[i];
+			irow = mImage[i];
 			acumulador += krow[0] * irow[j + -2];
 			acumulador += krow[1] * irow[j + -1];
 			acumulador += krow[2] * irow[j + 0];
@@ -106,7 +122,7 @@ bool Filter::convolution(double** image, double** result, int i_length, int thre
 			acumulador += krow[4] * irow[j + 2];
 
 			krow = mkernel[3];
-			irow = image[i + 1];
+			irow = mImage[i + 1];
 			acumulador += krow[0] * irow[j + -2];
 			acumulador += krow[1] * irow[j + -1];
 			acumulador += krow[2] * irow[j + 0];
@@ -114,216 +130,14 @@ bool Filter::convolution(double** image, double** result, int i_length, int thre
 			acumulador += krow[4] * irow[j + 2];
 
 			krow = mkernel[4];
-			irow = image[i + 2];
+			irow = mImage[i + 2];
 			acumulador += krow[0] * irow[j + -2];
 			acumulador += krow[1] * irow[j + -1];
 			acumulador += krow[2] * irow[j + 0];
 			acumulador += krow[3] * irow[j + 1];
 			acumulador += krow[4] * irow[j + 2];
 
-			result[i][j] = acumulador / 25;
-		}
-	}
-
-
-	//Clculo de los bordes sin ezquinas
-#pragma omp parallel sections
-	{
-#pragma omp section
-		{
-			double* krow;
-			double* irow;
-			for (int i = 2; i < ls_image; i++) {
-				for (int j = 0; j < 2; j++) {
-					double acumulador = 0;
-
-					for (int m = 0; m < 5; m++) {
-						krow = mkernel[m];
-						irow = image[i + (m - 2)];
-
-						if ((j - 2) >= 0) {
-							acumulador += krow[0] * irow[j - 2];
-						}
-						if ((j - 1) >= 0) {
-							acumulador += krow[1] * irow[j - 1];
-						}
-						acumulador += krow[2] * irow[j];
-						acumulador += krow[3] * irow[j + 1];
-						acumulador += krow[4] * irow[j + 2];
-					}
-					result[i][j] = acumulador / (15 + 5 * j);
-				}
-			}
-		}
-
-#pragma omp section
-		{
-			for (int i = 2; i < ls_image; i++) {
-				for (int j = ls_image; j < i_length; j++) {
-					double acumulador = 0;
-
-					for (int m = 0; m < 5; m++) {
-						double* krow = mkernel[m];
-						double* irow = image[i + (m - 2)];
-
-						acumulador += krow[0] * irow[j - 2];
-						acumulador += krow[1] * irow[j - 1];
-						acumulador += krow[2] * irow[j];
-						if ((j + 1) < i_length) {
-							acumulador += krow[3] * irow[j + 1];
-						}
-						if ((j + 2) < i_length) {
-							acumulador += krow[4] * irow[j + 2];
-						}
-					}
-					result[i][j] = acumulador / (15 + 5 * (i_length - 1 - j));
-				}
-			}
-		}
-
-#pragma omp section
-		{
-			for (int i = 0; i < 2; i++) {
-				for (int j = 2; j < ls_image; j++) {
-					int ii;
-					double acumulador = 0;
-
-					for (int m = 0; m < 5; m++) {
-						double* krow = mkernel[m];
-						ii = i + (m - 2);
-						double* irow = image[ii];
-						if (ii >= 0) {
-							for (int n = 0; n < 5; n++) {
-								acumulador += krow[n] * irow[j + (n - 2)];
-							}
-						}
-					}
-					result[i][j] = acumulador / (15 + 5 * i);
-				}
-			}
-		}
-
-#pragma omp section
-		{
-			for (int i = ls_image; i < i_length; i++) {
-				for (int j = 2; j < ls_image; j++) {
-					int ii;
-					double acumulador = 0;
-
-					for (int m = 0; m < 5; m++) {
-						double* krow = mkernel[m];
-						ii = i + (m - 2);
-						double* irow = image[ii];
-						if (ii < i_length) {
-							for (int n = 0; n < 5; n++) {
-								acumulador += krow[n] * irow[j + (n - 2)];
-							}
-						}
-					}
-					result[i][j] = acumulador / (15 + 5 * (i_length - 1 - i));
-				}
-			}
-		}
-	}
-
-	//Clculo de ezquinas
-#pragma omp parallel sections
-	{
-#pragma omp section
-		{
-			for (int i = 0; i < 2; i++) {
-				for (int j = 0; j < 2; j++) {
-					int ii, jj;
-					double acumulador = 0;
-					int num = 0;
-
-					for (int m = 0; m < 5; m++) {
-						double* krow = mkernel[m];
-						ii = i + (m - 2);
-						double* irow = image[ii];
-						for (int n = 0; n < 5; n++) {
-							jj = j + (n - 2);
-							if (ii >= 0 && jj >= 0) {
-								acumulador += krow[n] * irow[jj];
-								num++;
-							}
-						}
-					}
-					result[i][j] = acumulador / num;
-				}
-			}
-		}
-#pragma omp section
-		{
-			for (int i = ls_image; i < i_length; i++) {
-				for (int j = 0; j < 2; j++) {
-					int ii, jj;
-					double acumulador = 0;
-					int num = 0;
-
-					for (int m = 0; m < 5; m++) {
-						double* krow = mkernel[m];
-						ii = i + (m - 2);
-						double* irow = image[ii];
-						for (int n = 0; n < 5; n++) {
-							jj = j + (n - 2);
-							if (ii < i_length && jj >= 0) {
-								acumulador += krow[n] * irow[jj];
-								num++;
-							}
-						}
-					}
-					result[i][j] = acumulador / num;
-				}
-			}
-		}
-#pragma omp section
-		{
-			for (int i = 0; i < 2; i++) {
-				for (int j = ls_image; j < i_length; j++) {
-					int ii, jj;
-					double acumulador = 0;
-					int num = 0;
-
-					for (int m = 0; m < 5; m++) {
-						double* krow = mkernel[m];
-						ii = i + (m - 2);
-						double* irow = image[ii];
-						for (int n = 0; n < 5; n++) {
-							jj = j + (n - 2);
-							if (ii >= 0 && jj < i_length) {
-								acumulador += krow[n] * irow[jj];
-								num++;
-							}
-						}
-					}
-					result[i][j] = acumulador / num;
-				}
-			}
-		}
-#pragma omp section
-		{
-			for (int i = ls_image; i < i_length; i++) {
-				for (int j = ls_image; j < i_length; j++) {
-					int ii, jj;
-					double acumulador = 0;
-					int num = 0;
-
-					for (int m = 0; m < 5; m++) {
-						double* krow = mkernel[m];
-						ii = i + (m - 2);
-						double* irow = image[ii];
-						for (int n = 0; n < 5; n++) {
-							jj = j + (n - 2);
-							if (ii < i_length && jj < i_length) {
-								acumulador += krow[n] * irow[jj];
-								num++;
-							}
-						}
-					}
-					result[i][j] = acumulador / num;
-				}
-			}
+			result[(i-2)/step][(j-2)/step] = acumulador / 25;
 		}
 	}
 

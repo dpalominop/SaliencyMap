@@ -36,7 +36,7 @@ public:
 	bool setKernel(double kernel[][dim_kernel]);
 	bool setKernel(double** kernel, int n);
 	bool showKernel();
-	bool convolution(double** image, double** result, int i_length, int thread_count);
+	bool convolution(double** image, int i_length, double** result, int thread_count, int step);
 
 //Static methods
 public:

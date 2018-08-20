@@ -39,17 +39,46 @@ int main(int argc, char** argv) {
 	gb.setKernel(kernel, dim_kernel);
 	gb.showKernel();
 
+	if (show) {
+		std::cout << "Image used: " << std::endl;
+		Filter::showData(image, dim_image);
+	}
+
+	cout << "-------------------------------" << endl;
 	time_init = omp_get_wtime();
-	gb.convolution(image, result, dim_image, thread_count);
+	gb.convolution(image, dim_image, result, thread_count, 1);
 	time_final = omp_get_wtime();
+
+	if (show) {
+		std::cout << "Image resuted with step=1: " << std::endl;
+		Filter::showData(result, dim_image);
+	}
 
 	cout << "Minimal Total Time: " << time_final - time_init << endl;
 
+	cout << "-------------------------------" << endl;
+	time_init = omp_get_wtime();
+	gb.convolution(image, dim_image, result, thread_count, 2);
+	time_final = omp_get_wtime();
+
 	if (show) {
-		Filter::showData(kernel, dim_kernel);
-		Filter::showData(image, dim_image);
-		Filter::showData(result, dim_image);
+		std::cout << "Image resuted with step=2: " << std::endl;
+		Filter::showData(result, dim_image/2+1);
 	}
+
+	cout << "Minimal Total Time: " << time_final - time_init << endl;
+
+	cout << "-------------------------------" << endl;
+	time_init = omp_get_wtime();
+	gb.convolution(image, dim_image, result, thread_count, 3);
+	time_final = omp_get_wtime();
+
+	if (show) {
+		std::cout << "Image resuted with step=3: " << std::endl;
+		Filter::showData(result, dim_image / 3 + 1);
+	}
+
+	cout << "Minimal Total Time: " << time_final - time_init << endl;
 
 	Filter::deleteMemory(kernel, dim_kernel);
 	Filter::deleteMemory(image, dim_image);
