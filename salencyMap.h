@@ -7,6 +7,7 @@
 #include <math.h>
 #include "kernel.h"
 #include "Filter\Filter.h"
+#include "utils.h"
 
 #define NUMBER_OF_LEVELS 9
 #define THREAD_COUNT     4
@@ -193,7 +194,7 @@ void salencyMap::getData() {
 			b = (double)pixelPtr[i*cols*cn + j * cn + 0]; // B
 			g = (double)pixelPtr[i*cols*cn + j * cn + 1]; // G
 			r = (double)pixelPtr[i*cols*cn + j * cn + 2]; // R
-				
+			
 			aux = (r + g + b) / 3.0;
 			_I   [0][i][j] = aux;
 			_O0  [0][i][j] = aux;
@@ -232,16 +233,16 @@ void salencyMap::getPyramids() {
 	Filter gabor135 = Filter(GABOR_135_KERNEL);
 
 	for (int k = 1; k < NUMBER_OF_LEVELS;++k) {
-		gauss   .convolution(_I   [k - 1], rows, _I   [k], THREAD_COUNT, 2);
-		gabor0  .convolution(_O0  [k - 1], rows, _O0  [k], THREAD_COUNT, 2);
-		gabor45 .convolution(_O45 [k - 1], rows, _O45 [k], THREAD_COUNT, 2);
-		gabor90 .convolution(_O90 [k - 1], rows, _O90 [k], THREAD_COUNT, 2);
-		gabor135.convolution(_O135[k - 1], rows, _O135[k], THREAD_COUNT, 2);
+		gauss   .convolution(_I   [k - 1], rows, cols, _I   [k], THREAD_COUNT, 2);
+		gabor0  .convolution(_O0  [k - 1], rows, cols, _O0  [k], THREAD_COUNT, 2);
+		gabor45 .convolution(_O45 [k - 1], rows, cols, _O45 [k], THREAD_COUNT, 2);
+		gabor90 .convolution(_O90 [k - 1], rows, cols, _O90 [k], THREAD_COUNT, 2);
+		gabor135.convolution(_O135[k - 1], rows, cols, _O135[k], THREAD_COUNT, 2);
 
-		gauss.convolution(_R[k - 1], rows, _R[k], THREAD_COUNT, 2);
-		gauss.convolution(_G[k - 1], rows, _G[k], THREAD_COUNT, 2);
-		gauss.convolution(_B[k - 1], rows, _B[k], THREAD_COUNT, 2);
-		gauss.convolution(_Y[k - 1], rows, _Y[k], THREAD_COUNT, 2);
+		gauss.convolution(_R[k - 1], rows, cols, _R[k], THREAD_COUNT, 2);
+		gauss.convolution(_G[k - 1], rows, cols, _G[k], THREAD_COUNT, 2);
+		gauss.convolution(_B[k - 1], rows, cols, _B[k], THREAD_COUNT, 2);
+		gauss.convolution(_Y[k - 1], rows, cols, _Y[k], THREAD_COUNT, 2);
 	}
 	
 }
@@ -263,15 +264,15 @@ void salencyMap::reductionPyramid(double***pyramid, double **reduction, int sup,
 
 	centerSurroundDiff(pyramid, imSI1, sup, inf1);
 	centerSurroundDiff(pyramid, imSI2, sup, inf2);
-	/*
-	_norm = norm(imSI1, rows, cols);
-	_max  =  max(imSI1, rows, cols);
-	_mean = mean(imSI1, rows, cols);
+	
+	norm2Array(imSI1, _norm, rows, cols);
+	  maxArray(imSI1, _max , rows, cols);
+	 meanArray(imSI1, _mean, rows, cols);
 	coeff1 = (_max - _mean)*(_max - _mean) / _norm;
 
-	_norm = norm(imSI2, rows, cols);
-	_max  =  max(imSI2, rows, cols);
-	_mean = mean(imSI2, rows, cols);
+	norm2Array(imSI2, _norm, rows, cols);
+	  maxArray(imSI2, _max , rows, cols);
+	 meanArray(imSI2, _mean, rows, cols);
 	coeff2 = (_max - _mean)*(_max - _mean) / _norm;
 
 	for (int i = 0; i < rows; ++i) {
@@ -280,10 +281,9 @@ void salencyMap::reductionPyramid(double***pyramid, double **reduction, int sup,
 			reduction[i][j] += coeff2 * imSI2[i][j];
 		}
 	}
-	*/
-
-	cleanMemory(imSI1, rows);
-	cleanMemory(imSI2, rows);
+	
+	//cleanMemory(imSI1, rows);
+	//cleanMemory(imSI2, rows);
 }
 
 
