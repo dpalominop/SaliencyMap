@@ -17,31 +17,25 @@
 #include <assert.h>
 
 #define ASSERT assert
-
 #define dim_kernel 5
-#define dim_image 2000
 #define size_kernel dim_kernel*dim_kernel
-#define li_image dim_kernel/2
-#define ls_image dim_image-li_image
-
-
 #define length(x) (sizeof(x)/sizeof(x[0]))
 
-class GaussianBlur {
+class Filter {
 
 private:
 	double** mkernel;
 	int klength = dim_kernel;
 
 public:
-	GaussianBlur();
-	GaussianBlur(double[][dim_kernel] kernel);
-	GaussianBlur(double** kernel, int n);
-	~GaussianBlur();
+	Filter();
+	Filter(double kernel[][dim_kernel]);
+	Filter(double** kernel, int n);
+	~Filter();
 
-	bool setKernel(double[][dim_kernel] kernel);
+	bool setKernel(double kernel[][dim_kernel]);
 	bool setKernel(double** kernel, int n);
-	bool convolution(double** image, double** result, int thread_count);
+	bool convolution(double** image, double** result, int i_length, int thread_count);
 
 //Static methods
 public:

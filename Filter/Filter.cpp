@@ -7,18 +7,18 @@
 // Created on  : 19 ago. 2018
 //============================================================================
 
-#include "GaussianBlur.h"
+#include "Filter.h"
 
-GaussianBlur::GaussianBlur() {
+Filter::Filter() {
 	klength = dim_kernel;
 	reserveMemory(mkernel, klength);
 }
 
-GaussianBlur::~GaussianBlur() {
+Filter::~Filter() {
 	deleteMemory(mkernel, klength);
 }
 
-GaussianBlur::GaussianBlur(double[][dim_kernel] kernel) {
+Filter::Filter(double kernel[][dim_kernel]) {
 	ASSERT(length(kernel) == dim_kernel);
 
 	klength = length(kernel);
@@ -31,7 +31,7 @@ GaussianBlur::GaussianBlur(double[][dim_kernel] kernel) {
 	}
 }
 
-GaussianBlur::GaussianBlur(double** kernel, int n) {
+Filter::Filter(double** kernel, int n) {
 	ASSERT(n == dim_kernel);
 
 	klength = n;
@@ -44,7 +44,7 @@ GaussianBlur::GaussianBlur(double** kernel, int n) {
 	}
 }
 
-bool GaussianBlur::setKernel(double[][dim_kernel] kernel) {
+bool Filter::setKernel(double kernel[][dim_kernel]) {
 	ASSERT(length(kernel) == dim_kernel);
 
 	klength = length(kernel);
@@ -56,7 +56,7 @@ bool GaussianBlur::setKernel(double[][dim_kernel] kernel) {
 	return true;
 }
 
-bool GaussianBlur::setKernel(double** kernel, int n) {
+bool Filter::setKernel(double** kernel, int n) {
 	ASSERT(n == dim_kernel);
 
 	klength = n;
@@ -68,8 +68,11 @@ bool GaussianBlur::setKernel(double** kernel, int n) {
 	return true;
 }
 
-bool GaussianBlur::convolution(double** image, double** result, int thread_count)
+bool Filter::convolution(double** image, double** result, int i_length, int thread_count)
 {
+	int li_image = dim_kernel / 2;
+	int ls_image = i_length - li_image;
+
 	//Cuadrado central
 #pragma omp parallel for collapse(2) num_threads(thread_count) shared(mkernel, image, result, thread_count)
 	for (int i = 2; i < ls_image; i++) {
@@ -156,7 +159,7 @@ bool GaussianBlur::convolution(double** image, double** result, int thread_count
 #pragma omp section
 		{
 			for (int i = 2; i < ls_image; i++) {
-				for (int j = ls_image; j < dim_image; j++) {
+				for (int j = ls_image; j < i_length; j++) {
 					double acumulador = 0;
 
 					for (int m = 0; m < 5; m++) {
@@ -166,14 +169,14 @@ bool GaussianBlur::convolution(double** image, double** result, int thread_count
 						acumulador += krow[0] * irow[j - 2];
 						acumulador += krow[1] * irow[j - 1];
 						acumulador += krow[2] * irow[j];
-						if ((j + 1) < dim_image) {
+						if ((j + 1) < i_length) {
 							acumulador += krow[3] * irow[j + 1];
 						}
-						if ((j + 2) < dim_image) {
+						if ((j + 2) < i_length) {
 							acumulador += krow[4] * irow[j + 2];
 						}
 					}
-					result[i][j] = acumulador / (15 + 5 * (dim_image - 1 - j));
+					result[i][j] = acumulador / (15 + 5 * (i_length - 1 - j));
 				}
 			}
 		}
@@ -202,7 +205,7 @@ bool GaussianBlur::convolution(double** image, double** result, int thread_count
 
 #pragma omp section
 		{
-			for (int i = ls_image; i < dim_image; i++) {
+			for (int i = ls_image; i < i_length; i++) {
 				for (int j = 2; j < ls_image; j++) {
 					int ii;
 					double acumulador = 0;
@@ -211,13 +214,13 @@ bool GaussianBlur::convolution(double** image, double** result, int thread_count
 						double* krow = mkernel[m];
 						ii = i + (m - 2);
 						double* irow = image[ii];
-						if (ii < dim_image) {
+						if (ii < i_length) {
 							for (int n = 0; n < 5; n++) {
 								acumulador += krow[n] * irow[j + (n - 2)];
 							}
 						}
 					}
-					result[i][j] = acumulador / (15 + 5 * (dim_image - 1 - i));
+					result[i][j] = acumulador / (15 + 5 * (i_length - 1 - i));
 				}
 			}
 		}
@@ -252,7 +255,7 @@ bool GaussianBlur::convolution(double** image, double** result, int thread_count
 		}
 #pragma omp section
 		{
-			for (int i = ls_image; i < dim_image; i++) {
+			for (int i = ls_image; i < i_length; i++) {
 				for (int j = 0; j < 2; j++) {
 					int ii, jj;
 					double acumulador = 0;
@@ -264,7 +267,7 @@ bool GaussianBlur::convolution(double** image, double** result, int thread_count
 						double* irow = image[ii];
 						for (int n = 0; n < 5; n++) {
 							jj = j + (n - 2);
-							if (ii < dim_image && jj >= 0) {
+							if (ii < i_length && jj >= 0) {
 								acumulador += krow[n] * irow[jj];
 								num++;
 							}
@@ -277,7 +280,7 @@ bool GaussianBlur::convolution(double** image, double** result, int thread_count
 #pragma omp section
 		{
 			for (int i = 0; i < 2; i++) {
-				for (int j = ls_image; j < dim_image; j++) {
+				for (int j = ls_image; j < i_length; j++) {
 					int ii, jj;
 					double acumulador = 0;
 					int num = 0;
@@ -288,7 +291,7 @@ bool GaussianBlur::convolution(double** image, double** result, int thread_count
 						double* irow = image[ii];
 						for (int n = 0; n < 5; n++) {
 							jj = j + (n - 2);
-							if (ii >= 0 && jj < dim_image) {
+							if (ii >= 0 && jj < i_length) {
 								acumulador += krow[n] * irow[jj];
 								num++;
 							}
@@ -300,8 +303,8 @@ bool GaussianBlur::convolution(double** image, double** result, int thread_count
 		}
 #pragma omp section
 		{
-			for (int i = ls_image; i < dim_image; i++) {
-				for (int j = ls_image; j < dim_image; j++) {
+			for (int i = ls_image; i < i_length; i++) {
+				for (int j = ls_image; j < i_length; j++) {
 					int ii, jj;
 					double acumulador = 0;
 					int num = 0;
@@ -312,7 +315,7 @@ bool GaussianBlur::convolution(double** image, double** result, int thread_count
 						double* irow = image[ii];
 						for (int n = 0; n < 5; n++) {
 							jj = j + (n - 2);
-							if (ii < dim_image && jj < dim_image) {
+							if (ii < i_length && jj < i_length) {
 								acumulador += krow[n] * irow[jj];
 								num++;
 							}
@@ -327,7 +330,7 @@ bool GaussianBlur::convolution(double** image, double** result, int thread_count
 	return true;
 }
 
-bool GaussianBlur::reserveMemory(double** &matrix, int n) {
+bool Filter::reserveMemory(double** &matrix, int n) {
 
 	matrix = new double*[n];
 	for (int i = 0; i < n; i++) {
@@ -339,19 +342,17 @@ bool GaussianBlur::reserveMemory(double** &matrix, int n) {
 	return true;
 }
 
-bool GaussianBlur::deleteMemory(double** &matrix, int n) {
+bool Filter::deleteMemory(double** &matrix, int n) {
 	for (int i = 0; i < n; i++) {
 		delete[] matrix[i];
 	}
 
 	delete[] matrix;
 
-	ASSERT(matrix == NULL);
-
 	return true;
 }
 
-bool GaussianBlur::generateData(double** &matrix, int n) {
+bool Filter::generateData(double** &matrix, int n) {
 	srand(time(NULL));
 
 	for (int i = 0; i < n; i++) {
@@ -363,7 +364,7 @@ bool GaussianBlur::generateData(double** &matrix, int n) {
 	return false;
 }
 
-bool GaussianBlur::showData(double** result, int n) {
+bool Filter::showData(double** result, int n) {
 	for (int i = 0; i < n; i++)
 	{
 		for (int j = 0; j < n; j++)

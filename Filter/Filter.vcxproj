@@ -35,9 +35,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{d86dcb31-f2cc-49c6-83c2-78693bb7b380}</ProjectGuid>
+    <ProjectGuid>{f35102b8-67f5-4034-badf-1acf09f0b392}</ProjectGuid>
     <Keyword>Linux</Keyword>
-    <RootNamespace>GaussianBlur</RootNamespace>
+    <RootNamespace>Filter</RootNamespace>
     <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
     <ApplicationType>Linux</ApplicationType>
     <ApplicationTypeRevision>1.0</ApplicationTypeRevision>
@@ -75,14 +75,9 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
-    <ClCompile Include="GaussianBlur.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GaussianBlur.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Makefile" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

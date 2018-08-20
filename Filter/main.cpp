@@ -1,10 +1,11 @@
-#include "GaussianBlur.h"
+#include "Filter.h"
+#define dim_image 7
 
 using namespace std;
 
 int main(int argc, char** argv) {
 
-	GaussianBlur gb;
+	Filter gb;
 
 	int thread_count;
 	bool show = false;
@@ -41,23 +42,22 @@ int main(int argc, char** argv) {
 		result[i] = new double[dim_image];
 	}
 
-	GaussianBlur::generateData(kernel, dim_kernel);
-	GaussianBlur::generateData(image, dim_image);
-
-	gb.setKernel(kernel, dim_kernel);
+	Filter::generateData(kernel, dim_kernel);
+	Filter::generateData(image, dim_image);
 
 	//omp_set_nested (1);
+	gb.setKernel(kernel, dim_kernel);
 	double time_init = omp_get_wtime();
-	gb.convolution(image, result, thread_count);
+	gb.convolution(image, result, dim_image, thread_count);
 	double time_final = omp_get_wtime();
 
 	double n_elapsed = time_final - time_init;
 	cout << "Minimal Total Time: " << n_elapsed << endl;
 
 	if (show) {
-		GaussianBlur::showData(kernel, dim_kernel);
-		GaussianBlur::showData(image, dim_image);
-		GaussianBlur::showData(result, dim_image);
+		Filter::showData(kernel, dim_kernel);
+		Filter::showData(image, dim_image);
+		Filter::showData(result, dim_image);
 	}
 
 	for (int i = 0; i < dim_kernel; i++) {
