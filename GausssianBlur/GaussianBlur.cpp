@@ -9,10 +9,20 @@
 
 #include "GaussianBlur.h"
 
-GaussianBlur::GaussianBlur(double[klength][klength] kernel) {
-	ASSERT(length(kernel) == 5);
+GaussianBlur::GaussianBlur() {
+	klength = dim_kernel;
+	reserveMemory(mkernel, klength);
+}
 
-	if (reserveMemory(mkernel, dim_kernel)) {
+GaussianBlur::~GaussianBlur() {
+	deleteMemory(mkernel, klength);
+}
+
+GaussianBlur::GaussianBlur(double[][dim_kernel] kernel) {
+	ASSERT(length(kernel) == dim_kernel);
+
+	klength = length(kernel);
+	if (reserveMemory(mkernel, klength)) {
 		setKernel(kernel);
 		std::cout << "Kernel created" << std::endl;
 	}
@@ -22,10 +32,11 @@ GaussianBlur::GaussianBlur(double[klength][klength] kernel) {
 }
 
 GaussianBlur::GaussianBlur(double** kernel, int n) {
-	ASSERT(length(kernel) == 5);
+	ASSERT(n == dim_kernel);
 
-	if (reserveMemory(mkernel, n)) {
-		setKernel(kernel);
+	klength = n;
+	if (reserveMemory(mkernel, klength)) {
+		setKernel(kernel, n);
 		std::cout << "Kernel created" << std::endl;
 	}
 	else {
@@ -33,7 +44,31 @@ GaussianBlur::GaussianBlur(double** kernel, int n) {
 	}
 }
 
-bool GaussianBlur::convolucion(double** image, double** result, int thread_count)
+bool GaussianBlur::setKernel(double[][dim_kernel] kernel) {
+	ASSERT(length(kernel) == dim_kernel);
+
+	klength = length(kernel);
+	for (int i = 0; i < klength; i++) {
+		for (int j = 0; j < klength; j++) {
+			mkernel[i][j] = kernel[i][j];
+		}
+	}
+	return true;
+}
+
+bool GaussianBlur::setKernel(double** kernel, int n) {
+	ASSERT(n == dim_kernel);
+
+	klength = n;
+	for (int i = 0; i < klength; i++) {
+		for (int j = 0; j < klength; j++) {
+			mkernel[i][j] = kernel[i][j];
+		}
+	}
+	return true;
+}
+
+bool GaussianBlur::convolution(double** image, double** result, int thread_count)
 {
 	//Cuadrado central
 #pragma omp parallel for collapse(2) num_threads(thread_count) shared(mkernel, image, result, thread_count)
@@ -292,7 +327,7 @@ bool GaussianBlur::convolucion(double** image, double** result, int thread_count
 	return true;
 }
 
-bool GaussianBlur::reserveMemory(double**       &matrix, int n) {
+bool GaussianBlur::reserveMemory(double** &matrix, int n) {
 
 	matrix = new double*[n];
 	for (int i = 0; i < n; i++) {
@@ -304,7 +339,7 @@ bool GaussianBlur::reserveMemory(double**       &matrix, int n) {
 	return true;
 }
 
-bool GaussianBlur::deleteMemory(double** matrix, int n) {
+bool GaussianBlur::deleteMemory(double** &matrix, int n) {
 	for (int i = 0; i < n; i++) {
 		delete[] matrix[i];
 	}
@@ -316,7 +351,7 @@ bool GaussianBlur::deleteMemory(double** matrix, int n) {
 	return true;
 }
 
-bool GaussianBlur::generateData(double** matrix, int n) {
+bool GaussianBlur::generateData(double** &matrix, int n) {
 	srand(time(NULL));
 
 	for (int i = 0; i < n; i++) {
@@ -333,9 +368,9 @@ bool GaussianBlur::showData(double** result, int n) {
 	{
 		for (int j = 0; j < n; j++)
 		{
-			cout << " " << result[i][j];
+			std::cout << " " << result[i][j];
 		}
-		cout << endl;
+		std::cout << std::endl;
 	}
 
 	return true;

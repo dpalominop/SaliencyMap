@@ -14,6 +14,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <omp.h>
+#include <assert.h>
 
 #define ASSERT assert
 
@@ -30,21 +31,27 @@ class GaussianBlur {
 
 private:
 	double** mkernel;
-	int klength = 5;
+	int klength = dim_kernel;
 
 public:
-	GaussianBlur(double[][] kernel);
-	GaussianBlur(double** kernel);
+	GaussianBlur();
+	GaussianBlur(double[][dim_kernel] kernel);
+	GaussianBlur(double** kernel, int n);
+	~GaussianBlur();
 
-	bool setKernel(double[][] kernel);
-	bool setKernel(double** kernel);
-	bool convolucion(double** image, double** result, int thread_count);
-	bool showData(double** result, int n);
-	bool generateData(double** matrix, int n);
+	bool setKernel(double[][dim_kernel] kernel);
+	bool setKernel(double** kernel, int n);
+	bool convolution(double** image, double** result, int thread_count);
 
-	bool deleteMemory(double** &matrix, int n);
-	bool reserveMemory(double** &matrix, int n);
+//Static methods
+public:
+
+	static bool showData(double** result, int n);
+	static bool generateData(double** &matrix, int n);
+
+	static bool deleteMemory(double** &matrix, int n);
+	static bool reserveMemory(double** &matrix, int n);
 
 };
 
-#endif GAUSSIANBLUR_H
+#endif

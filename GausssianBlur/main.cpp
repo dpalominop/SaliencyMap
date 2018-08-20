@@ -4,6 +4,8 @@ using namespace std;
 
 int main(int argc, char** argv) {
 
+	GaussianBlur gb;
+
 	int thread_count;
 	bool show = false;
 
@@ -39,21 +41,23 @@ int main(int argc, char** argv) {
 		result[i] = new double[dim_image];
 	}
 
-	generateData(kernel, dim_kernel);
-	generateData(image, dim_image);
+	GaussianBlur::generateData(kernel, dim_kernel);
+	GaussianBlur::generateData(image, dim_image);
+
+	gb.setKernel(kernel, dim_kernel);
 
 	//omp_set_nested (1);
 	double time_init = omp_get_wtime();
-	convolucion(kernel, image, result, thread_count);
+	gb.convolution(image, result, thread_count);
 	double time_final = omp_get_wtime();
 
 	double n_elapsed = time_final - time_init;
 	cout << "Minimal Total Time: " << n_elapsed << endl;
 
 	if (show) {
-		showData(kernel, dim_kernel);
-		showData(image, dim_image);
-		showData(result, dim_image);
+		GaussianBlur::showData(kernel, dim_kernel);
+		GaussianBlur::showData(image, dim_image);
+		GaussianBlur::showData(result, dim_image);
 	}
 
 	for (int i = 0; i < dim_kernel; i++) {
