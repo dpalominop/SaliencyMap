@@ -317,12 +317,17 @@ void salencyMap::getData() {
 
 			aux = (r + g) / 2.0 - abs(r - g) / 2.0 - b;
 			_Y[i][j] = (aux > 0.0) ? aux : 0.0;
+		}
+	}
 
+	for (i = 0; i < rows/4; i++) {
+		for (j = 0; j < cols/4; j++) {
 			_Imap[i][j] = 0;
 			_Omap[i][j] = 0;
 			_Cmap[i][j] = 0;
 		}
 	}
+
 }
 
 void salencyMap::run(){
@@ -340,7 +345,6 @@ void salencyMap::run(){
 	imshow(_Imap,rows/4,cols/4,"Mapa de Intensidad");
 	imshow(_Omap,rows/4,cols/4,"Mapa de Orientacion");	
 	imshow(_Cmap,rows/4,cols/4,"Mapa de Color");
-
 }
 
 void salencyMap::getMap(double** &feature, double** &map, double kernel[][5]){
@@ -348,14 +352,14 @@ void salencyMap::getMap(double** &feature, double** &map, double kernel[][5]){
 	Filter blur(kernel);
 
 	// Generate pyramid
-	blur.convolution(   feature, rows,cols, py._Level1, 2, THREAD_COUNT);
-	blur.convolution(py._Level1, rows,cols, py._Level2, 2, THREAD_COUNT);
-	blur.convolution(py._Level2, rows,cols, py._Level3, 2, THREAD_COUNT);
-	blur.convolution(py._Level3, rows,cols, py._Level4, 2, THREAD_COUNT);
-	blur.convolution(py._Level4, rows,cols, py._Level5, 2, THREAD_COUNT);
-	blur.convolution(py._Level5, rows,cols, py._Level6, 2, THREAD_COUNT);
-	blur.convolution(py._Level6, rows,cols, py._Level7, 2, THREAD_COUNT);
-	blur.convolution(py._Level7, rows,cols, py._Level8, 2, THREAD_COUNT);
+	blur.convolution(   feature, rows    ,cols    , py._Level1, 2, THREAD_COUNT);
+	blur.convolution(py._Level1, rows/2  ,cols/2  , py._Level2, 2, THREAD_COUNT);
+	blur.convolution(py._Level2, rows/4  ,cols/4  , py._Level3, 2, THREAD_COUNT);
+	blur.convolution(py._Level3, rows/8  ,cols/8  , py._Level4, 2, THREAD_COUNT);
+	blur.convolution(py._Level4, rows/16 ,cols/16 , py._Level5, 2, THREAD_COUNT);
+	blur.convolution(py._Level5, rows/32 ,cols/32 , py._Level6, 2, THREAD_COUNT);
+	blur.convolution(py._Level6, rows/64 ,cols/64 , py._Level7, 2, THREAD_COUNT);
+	blur.convolution(py._Level7, rows/128,cols/128, py._Level8, 2, THREAD_COUNT);
 	
 	// Center-surround difference
 	double **feat25 = allocate(rows/4, cols/4), **feat26 = allocate(rows/4, cols/4);
