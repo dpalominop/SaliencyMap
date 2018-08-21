@@ -459,9 +459,9 @@ void salencyMap::imshow(double **img,int x_length, int y_length, std::string nam
 
 
 void salencyMap::imshow(Mat img, std::string name = "Una ventana"){
-	Mat half( img.rows/2, img.cols/2,  img.type() );
-	cv::resize(img,half,cv::Size(), 0.5, 0.5);
-	cv::imshow(name,half);
+	//Mat half( img.rows/2, img.cols/2,  img.type() );
+	//cv::resize(img,half,cv::Size(), 0.5, 0.5);
+	cv::imshow(name,img);
 	waitKey(0);
 }
 
