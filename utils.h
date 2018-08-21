@@ -82,6 +82,25 @@ void norm2Array(double **arr, double &norm, int rows, int cols, int thread_count
 }
 
 
+void nrm(double** &arr, int rows, int cols, int thread_count){
+	double _norm, _max, _mean;
+	double coeff;
+
+	  maxArray(arr, _max , rows, cols, thread_count);
+	 meanArray(arr, _mean, rows, cols, thread_count);
+	norm2Array(arr, _norm, rows, cols, thread_count);
+
+	coeff = (_max - _mean)*(_max - _mean) / _norm;
+
+#pragma omp parallel for collapse(2) num_threads(thread_count) shared(coeff)
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++) {
+			arr[i][j] = coeff*arr[i][j];
+		}
+	}
+}
+
+
 bool interpolation(double** matrix, int x, int y, double** &result, int k, int thread_count) {
 #pragma omp parallel for collapse(2) num_threads(thread_count) shared(matrix, result)
 	for (int i = 0; i < x; i++) {

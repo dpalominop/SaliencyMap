@@ -8,6 +8,7 @@
 #include <iostream>
 #include <stdio.h> 
 #include <math.h>
+#include <string>
 #include "kernel.h"
 #include "Filter/Filter.h"
 #include "utils.h"
@@ -32,17 +33,108 @@ void cleanMemory(double **dPointer, int rows) {
 	delete[] dPointer;
 }
 
+int pow2(int pot){
+	int out = 1;
+	for (int i=0; i<pot; ++i) out *= 2;
+	return out;
+}
+
+
+struct Pyramid{
+	double **_Base;
+	double **_Level1;
+	double **_Level2;
+	double **_Level3;
+	double **_Level4;
+	double **_Level5;
+	double **_Level6;
+	double **_Level7;
+	double **_Level8;
+	int rows;
+	int cols;
+
+	Pyramid(int _rows, int _cols): rows(_rows), cols(_cols) {
+		int c;
+
+		_Base = new double*[rows];
+		for(int i=0; i<rows; ++i) _Base[i] = new double[rows];
+
+		c = 2; _Level1 = new double*[rows/c];
+		for(int i=0; i<rows/c; ++i) _Level1[i] = new double[rows/c];
+
+		c = 4; _Level2 = new double*[rows/c];
+		for(int i=0; i<rows/c; ++i) _Level2[i] = new double[rows/c];
+
+		c = 8; _Level3 = new double*[rows/c];
+		for(int i=0; i<rows/c; ++i) _Level3[i] = new double[rows/c];
+
+		c = 16; _Level4 = new double*[rows/c];
+		for(int i=0; i<rows/c; ++i) _Level4[i] = new double[rows/c];
+
+		c = 32; _Level5 = new double*[rows/c];
+		for(int i=0; i<rows/c; ++i) _Level5[i] = new double[rows/c];
+
+		c = 64; _Level6 = new double*[rows/c];
+		for(int i=0; i<rows/c; ++i) _Level6[i] = new double[rows/c];
+
+		c = 128; _Level7 = new double*[rows/c];
+		for(int i=0; i<rows/c; ++i) _Level7[i] = new double[rows/c];
+
+		c = 256; _Level8 = new double*[rows/c];
+		for(int i=0; i<rows/c; ++i) _Level8[i] = new double[rows/c];
+	}
+
+	void clean(){
+		int c;
+		
+		for(int i=0; i<rows; ++i) delete [] _Base[i];
+		delete [] _Base;
+
+		c = 2; for(int i=0; i<rows/c; ++i) delete [] _Level1[i];
+		delete [] _Level1;
+
+		c = 4; for(int i=0; i<rows/c; ++i) delete [] _Level2[i];
+		delete [] _Level2;
+
+		c = 8; for(int i=0; i<rows/c; ++i) delete [] _Level3[i];
+		delete [] _Level3;
+
+		c = 16; for(int i=0; i<rows/c; ++i) delete [] _Level4[i];
+		delete [] _Level4;
+
+		c = 32; for(int i=0; i<rows/c; ++i) delete [] _Level5[i];
+		delete [] _Level5;
+
+		c = 64; for(int i=0; i<rows/c; ++i) delete [] _Level6[i];
+		delete [] _Level6;
+
+		c = 128; for(int i=0; i<rows/c; ++i) delete [] _Level7[i];
+		delete [] _Level7;
+
+		c = 256; for(int i=0; i<rows/c; ++i) delete [] _Level8[i];
+		delete [] _Level8;
+
+	}
+};
+
+
+
 
 class salencyMap
 {
 private:
 	// Image date
-	double ***_R, ***_G,
-		   ***_B, ***_Y;
-	double ***_I,
-		   ***_O0, ***_O45,
-		   ***_O90, ***_O135;
-	
+	double **_R, **_G,
+		   **_B, **_Y;
+	double **_I,
+		   **_O0, **_O45,
+		   **_O90, **_O135;
+
+	double **_Imap, **_Omap,
+	       **_Cmap;
+
+	std::string _dir;
+
 	int rRows, rCols;  // Real size
 	int  rows, cols;  // Square size
 
@@ -52,59 +144,29 @@ private:
 	void getPyramids();
 	void reductionFeatures();
 
+	void getMap(double** &feature, double** &map, double kernel[][5]);
+	void getSalency();
+
 	void reductionPyramid(double***pyramid, double **reduction);
 	void reductionPyramid(double***pyramid, double **reduction, int sup, int inf1, int inf2);
 	void centerSurroundDiff(double***pyramid, double** difference, int firstLevel, int secondLevel);
+	void centerSurroundDiff(double** &supLevel, double** &infLevel, double ** &difference, int firstLevel, int secondLevel, int endLevel);
 	void absDifference(double** out, double** first, double** second, int rows, int cols);
 
-	void imshow(Mat img);
-	void imshow(double **img,int x_length, int y_length);
+	void imshow(Mat img, std::string name);
+	void imshow(double **img,int x_length, int y_length, std::string name);
 
 public:
-	salencyMap() {
-		_I    = new double**[NUMBER_OF_LEVELS];
-		_O0   = new double**[NUMBER_OF_LEVELS];
-		_O45  = new double**[NUMBER_OF_LEVELS];
-		_O90  = new double**[NUMBER_OF_LEVELS];
-		_O135 = new double**[NUMBER_OF_LEVELS];
-
-		_R = new double**[NUMBER_OF_LEVELS];
-		_G = new double**[NUMBER_OF_LEVELS];
-		_B = new double**[NUMBER_OF_LEVELS];
-		_Y = new double**[NUMBER_OF_LEVELS];
+	salencyMap(std::string direction): _dir(direction) {
+		this->getData();
 	}
 
 	void getData();
 	void run();
+
+	void setDirImage(std::string direction){ _dir = direction; }
 };
 
-
-void salencyMap::imshow(double **img,int x_length, int y_length){
-	double maxImg, minImg, coeff;
-
-	maxArray(img,maxImg,x_length,y_length,THREAD_COUNT);
-	minArray(img,minImg,x_length,y_length,THREAD_COUNT);
-
-	coeff = 255/(maxImg-minImg);
-
-	Mat out = cv::Mat(x_length, y_length, CV_8UC1);
-
-	for (int i = 0; i < x_length; i++) {
-		for (int j = 0; j < y_length; j++) {
-			out.at<uchar>(i, j) = (uchar)( coeff*(img[i][j]-minImg) );
-		}
-	}
-
-	salencyMap::imshow(out);
-}
-
-
-void salencyMap::imshow(Mat img){
-	Mat half( img.rows/2, img.cols/2,  img.type() );
-	cv::resize(img,half,cv::Size(), 0.5, 0.5);
-	cv::imshow("No quiero jalar!",half);
-	waitKey(0);
-}
 
 void salencyMap::getData() {
 /*
@@ -112,7 +174,7 @@ void salencyMap::getData() {
 	---------
  */
 	cv::Mat image, padImg;
-	image = cv::imread("images/oso.jpg", CV_LOAD_IMAGE_COLOR);
+	image = cv::imread(_dir, CV_LOAD_IMAGE_COLOR);
 
 	if (!image.data){
 		std::cout << "Could not open or find the image" << std::endl;
@@ -209,13 +271,16 @@ void salencyMap::getData() {
 	Inicialize
 	----------
  */
-	for (int k = 0; k < NUMBER_OF_LEVELS;++k){
-		_I  [k] = allocate(rows, cols);
-		_O0 [k] = allocate(rows, cols); _O45 [k] = allocate(rows, cols);
-		_O90[k] = allocate(rows, cols); _O135[k] = allocate(rows, cols);
-		_R  [k] = allocate(rows, cols); _G   [k] = allocate(rows, cols);
-		_B  [k] = allocate(rows, cols); _Y   [k] = allocate(rows, cols);
-	}
+	_I  = allocate(rows, cols);
+	_O0 = allocate(rows, cols); _O45 = allocate(rows, cols);
+	_O90= allocate(rows, cols); _O135= allocate(rows, cols);
+	_R  = allocate(rows, cols); _G   = allocate(rows, cols);
+	_B  = allocate(rows, cols); _Y   = allocate(rows, cols);
+	
+	_Imap = allocate(rows/4, cols/4);
+	_Cmap = allocate(rows/4, cols/4);
+	_Omap = allocate(rows/4, cols/4);
+
 
 /*
 	Get features
@@ -235,153 +300,128 @@ void salencyMap::getData() {
 			r = (double)bgrPixel[2]; // R
 			
 			aux = (r + g + b) / 3.0;
-			_I   [0][i][j] = aux;
-			_O0  [0][i][j] = aux;
-			_O45 [0][i][j] = aux;
-			_O90 [0][i][j] = aux;
-			_O135[0][i][j] = aux;
+			_I   [i][j] = aux;
+			_O0  [i][j] = aux;
+			_O45 [i][j] = aux;
+			_O90 [i][j] = aux;
+			_O135[i][j] = aux;
 			
 			aux = r - (g + b) / 2.0;
-			_R[0][i][j] = (aux > 0.0) ? aux : 0.0;
+			_R[i][j] = (aux > 0.0) ? aux : 0.0;
 
 			aux = g - (b + r) / 2.0;
-			_G[0][i][j] = (aux > 0.0) ? aux : 0.0;
+			_G[i][j] = (aux > 0.0) ? aux : 0.0;
 
 			aux = b - (r + g) / 2.0;
-			_B[0][i][j] = (aux > 0.0) ? aux : 0.0;
+			_B[i][j] = (aux > 0.0) ? aux : 0.0;
 
 			aux = (r + g) / 2.0 - abs(r - g) / 2.0 - b;
-			_Y[0][i][j] = (aux > 0.0) ? aux : 0.0;
+			_Y[i][j] = (aux > 0.0) ? aux : 0.0;
 
+			_Imap[i][j] = 0;
+			_Omap[i][j] = 0;
+			_Cmap[i][j] = 0;
 		}
 	}
 }
 
 void salencyMap::run(){
-	this->getPyramids();
-	this->reductionFeatures();
+	this->getMap(_I   ,_Imap,GAUSS_KERNEL   );
+	this->getMap(_O0  ,_Omap,GABOR_00_KERNEL);
+	this->getMap(_O45 ,_Omap,GABOR_45_KERNEL);
+	this->getMap(_O90 ,_Omap,GABOR_90_KERNEL);
+	this->getMap(_O135,_Omap,GABOR_135_KERNEL);
+	this->getMap(_R   ,_Cmap,GAUSS_KERNEL    );
+	this->getMap(_G   ,_Cmap,GAUSS_KERNEL    );
+	this->getMap(_B   ,_Cmap,GAUSS_KERNEL    );
+	this->getMap(_Y   ,_Cmap,GAUSS_KERNEL    );
+
+	// Print images
+	imshow(_Imap,rows/4,cols/4,"Mapa de Intensidad");
+	imshow(_Omap,rows/4,cols/4,"Mapa de Orientacion");	
+	imshow(_Cmap,rows/4,cols/4,"Mapa de Color");
+
 }
 
-void salencyMap::getPyramids() {
+void salencyMap::getMap(double** &feature, double** &map, double kernel[][5]){
+	Pyramid py(rows,cols);
+	Filter blur(kernel);
+
+	// Generate pyramid
+	blur.convolution(   feature, rows,cols, py._Level1, 2, THREAD_COUNT);
+	blur.convolution(py._Level1, rows,cols, py._Level2, 2, THREAD_COUNT);
+	blur.convolution(py._Level2, rows,cols, py._Level3, 2, THREAD_COUNT);
+	blur.convolution(py._Level3, rows,cols, py._Level4, 2, THREAD_COUNT);
+	blur.convolution(py._Level4, rows,cols, py._Level5, 2, THREAD_COUNT);
+	blur.convolution(py._Level5, rows,cols, py._Level6, 2, THREAD_COUNT);
+	blur.convolution(py._Level6, rows,cols, py._Level7, 2, THREAD_COUNT);
+	blur.convolution(py._Level7, rows,cols, py._Level8, 2, THREAD_COUNT);
 	
-	Filter gauss    = Filter(GAUSS_KERNEL);
-	Filter gabor0   = Filter(GABOR_00_KERNEL);
-	Filter gabor45  = Filter(GABOR_45_KERNEL);
-	Filter gabor90  = Filter(GABOR_90_KERNEL);
-	Filter gabor135 = Filter(GABOR_135_KERNEL);
+	// Center-surround difference
+	double **feat25 = allocate(rows/4, cols/4), **feat26 = allocate(rows/4, cols/4);
+	double **feat36 = allocate(rows/4, cols/4), **feat37 = allocate(rows/4, cols/4);
+	double **feat47 = allocate(rows/4, cols/4), **feat48 = allocate(rows/4, cols/4);
 
-	for (int k = 1; k < NUMBER_OF_LEVELS;++k) {
-		gauss   .convolution(_I   [k - 1], rows, cols, _I   [k], 2,THREAD_COUNT);
-		gabor0  .convolution(_O0  [k - 1], rows, cols, _O0  [k], 2,THREAD_COUNT);
-		gabor45 .convolution(_O45 [k - 1], rows, cols, _O45 [k], 2,THREAD_COUNT);
-		gabor90 .convolution(_O90 [k - 1], rows, cols, _O90 [k], 2,THREAD_COUNT);
-		gabor135.convolution(_O135[k - 1], rows, cols, _O135[k], 2,THREAD_COUNT);
+	centerSurroundDiff(py._Level2, py._Level5, feat25, 2, 5, 2);
+	centerSurroundDiff(py._Level2, py._Level6, feat26, 2, 6, 2);
 
-		gauss.convolution(_R[k - 1], rows, cols, _R[k], 2,THREAD_COUNT);
-		gauss.convolution(_G[k - 1], rows, cols, _G[k], 2,THREAD_COUNT);
-		gauss.convolution(_B[k - 1], rows, cols, _B[k], 2,THREAD_COUNT);
-		gauss.convolution(_Y[k - 1], rows, cols, _Y[k], 2,THREAD_COUNT);
-	}
+	centerSurroundDiff(py._Level3, py._Level6, feat36, 3, 6, 2);
+	centerSurroundDiff(py._Level3, py._Level7, feat37, 3, 7, 2);
+
+	centerSurroundDiff(py._Level4, py._Level7, feat47, 4, 7, 2);
+	centerSurroundDiff(py._Level4, py._Level8, feat48, 4, 8, 2);
+
+	// Clean Pyramid
+	py.clean();
+
+	// Normalizarion
+	nrm(feat25,rows,cols,THREAD_COUNT);
+	nrm(feat26,rows,cols,THREAD_COUNT);
 	
-	imshow(_I[1],rows,cols);
-}
-
-
-
-void salencyMap::reductionFeatures() {
-	double **I, 
-		   **R , **G  , **B  , **Y,
-		   **O0, **O45, **O90, **O135;
-
-	I = allocate(rows, cols);
-	R = allocate(rows, cols); G = allocate(rows, cols);
-	B = allocate(rows, cols); Y = allocate(rows, cols);
-	O0  = allocate(rows, cols); O45  = allocate(rows, cols);
-	O90 = allocate(rows, cols); O135 = allocate(rows, cols);
-
-#   pragma omp parallel for collapse(2) num_threads(THREAD_COUNT)
-	for (int i = 0; i < rows; ++i) {
-		for (int j = 0; j < rows; ++j) {
-			I  [i][j] = 0;
-			R  [i][j] = 0; G   [i][j] = 0;
-			B  [i][j] = 0; Y   [i][j] = 0;
-			O0 [i][j] = 0; O45 [i][j] = 0;
-			O90[i][j] = 0; O135[i][j] = 0;
-		}
-	}
-	
-	reductionPyramid(_I  ,  I );
-	reductionPyramid(_O0 , O0 ); reductionPyramid(_O45 , O45 );
-	reductionPyramid(_O90, O90); reductionPyramid(_O135, O135);
-	reductionPyramid(_R  ,  R ); reductionPyramid(_G   , G   );
-	reductionPyramid(_B  ,  B ); reductionPyramid(_Y   , Y   );
-
-	double **salency;
-	salency = allocate(rRows, rCols);
-
-	for (int i = 0, ip = startRealR; i < rRows; ++i, ++ip) {
-		for (int j = 0, jp = startRealC; j < rCols; ++j, ++jp) {
-			salency[i][j] = I[ip][jp] + O0[ip][jp] + O90[ip][jp] + O45[ip][jp] + O135[ip][jp] + R[ip][jp] + G[ip][jp] + B[ip][jp]  + Y[ip][jp];
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++) {
+			map[i][j] += feat25[i][j] + feat26[i][j];
 		}
 	}
 
-	//salencyMap::imshow(salency,rRows, rCols);
-}
+	nrm(feat36,rows,cols,THREAD_COUNT);
+	nrm(feat37,rows,cols,THREAD_COUNT);
 
-
-
-void salencyMap::reductionPyramid(double***pyramid, double **reduction) {
-	reductionPyramid(pyramid, reduction, 2, 5, 6);
-	reductionPyramid(pyramid, reduction, 3, 6, 7);
-	reductionPyramid(pyramid, reduction, 4, 7, 8);
-}
-
-
-void salencyMap::reductionPyramid(double***pyramid, double **reduction, int sup, int inf1, int inf2) {
-	double **imSI1, **imSI2;
-	double _norm, _max, _mean;
-	double coeff1, coeff2;
-
-	imSI1 = allocate(rows, cols);
-	imSI2 = allocate(rows, cols);
-
-	centerSurroundDiff(pyramid, imSI1, sup, inf1);
-	centerSurroundDiff(pyramid, imSI2, sup, inf2);
-	
-	norm2Array(imSI1, _norm, rows, cols, THREAD_COUNT);
-	  maxArray(imSI1, _max , rows, cols, THREAD_COUNT);
-	 meanArray(imSI1, _mean, rows, cols, THREAD_COUNT);
-	coeff1 = (_max - _mean)*(_max - _mean) / _norm;
-
-	norm2Array(imSI2, _norm, rows, cols, THREAD_COUNT);
-	  maxArray(imSI2, _max , rows, cols, THREAD_COUNT);
-	 meanArray(imSI2, _mean, rows, cols, THREAD_COUNT);
-	coeff2 = (_max - _mean)*(_max - _mean) / _norm;
-
-
-	for (int i = 0; i < rows; ++i) {
-		for (int j = 0; j < cols; ++j) {
-			reduction[i][j] += coeff1 * imSI1[i][j];
-			reduction[i][j] += coeff2 * imSI2[i][j];
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++) {
+			map[i][j] += feat36[i][j] + feat37[i][j];
 		}
 	}
-	
-	Filter::deleteMemory(imSI1, rows,cols);
-	Filter::deleteMemory(imSI2, rows,cols);
+
+	nrm(feat47,rows,cols,THREAD_COUNT);
+	nrm(feat48,rows,cols,THREAD_COUNT);
+
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++) {
+			map[i][j] += feat47[i][j] + feat48[i][j];
+		}
+	}
 }
 
-void salencyMap::centerSurroundDiff(double***pyramid, double** difference,int firstLevel, int secondLevel) {
-	double **Ifs;
-	double **rawDiff;
-	Ifs = allocate(rows, cols);
-	rawDiff = allocate(rows, cols);
-	//interpolation(_I[firstLevel], rows, cols, Ifs, pow(2, secondLevel- firstLevel), THREAD_COUNT);
-	absDifference(difference, _I[firstLevel],Ifs,rows,cols);
 
-	//interpolation(rawDiff, rows, cols, difference, pow(2, firstLevel), THREAD_COUNT);
+void salencyMap::centerSurroundDiff(double** &supLevel, double** &lowLevel, double ** &difference, int sup, int low, int endl){
+	int supRow = rows/pow2(sup);
+	int supCol = cols/pow2(sup);
 
-	Filter::deleteMemory(    Ifs,rows,cols);
-	Filter::deleteMemory(rawDiff,rows,cols);
+	int lowRow = rows/pow2(low);
+	int lowCol = cols/pow2(low);
+
+	double **growLowLevel = allocate(supRow,supCol);
+	Filter::growthMatrix(lowLevel,lowRow, lowCol,growLowLevel,pow2(sup-low),THREAD_COUNT);
+
+	if(sup != endl){
+		double **rawDifference = allocate(supRow, supCol);
+
+		absDifference(rawDifference, supLevel,growLowLevel,supRow,supCol);
+		Filter::growthMatrix(rawDifference,supRow,supCol,difference,pow2(endl-sup),THREAD_COUNT);
+	}else{
+		absDifference(difference, supLevel,growLowLevel,supRow,supCol);
+	}
 }
 
 void salencyMap::absDifference(double** out, double** first, double** second, int rows, int cols) {
@@ -395,6 +435,34 @@ void salencyMap::absDifference(double** out, double** first, double** second, in
 			out[i][j] = (a > b) ? (a - b) : (b - a);
 		}
 	}
+}
+
+
+void salencyMap::imshow(double **img,int x_length, int y_length, std::string name = "Una ventana"){
+	double maxImg, minImg, coeff;
+
+	maxArray(img,maxImg,x_length,y_length,THREAD_COUNT);
+	minArray(img,minImg,x_length,y_length,THREAD_COUNT);
+
+	coeff = 255/(maxImg-minImg);
+
+	Mat out = cv::Mat(x_length, y_length, CV_8UC1);
+
+	for (int i = 0; i < x_length; i++) {
+		for (int j = 0; j < y_length; j++) {
+			out.at<uchar>(i, j) = (uchar)( coeff*(img[i][j]-minImg) );
+		}
+	}
+
+	salencyMap::imshow(out,name);
+}
+
+
+void salencyMap::imshow(Mat img, std::string name = "Una ventana"){
+	Mat half( img.rows/2, img.cols/2,  img.type() );
+	cv::resize(img,half,cv::Size(), 0.5, 0.5);
+	cv::imshow(name,half);
+	waitKey(0);
 }
 
 #endif
