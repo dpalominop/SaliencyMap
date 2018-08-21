@@ -345,6 +345,8 @@ void salencyMap::run(){
 	imshow(_Imap,rows/4,cols/4,"Mapa de Intensidad");
 	imshow(_Omap,rows/4,cols/4,"Mapa de Orientacion");	
 	imshow(_Cmap,rows/4,cols/4,"Mapa de Color");
+
+	this->getSalency();
 }
 
 void salencyMap::getMap(double** &feature, double** &map, double kernel[][5]){
@@ -439,6 +441,19 @@ void salencyMap::absDifference(double** out, double** first, double** second, in
 			out[i][j] = (a > b) ? (a - b) : (b - a);
 		}
 	}
+}
+
+
+void salencyMap::getSalency(){
+	double **saleny = allocate(rows/4,cols/4);
+
+	for(int i=0; i<rows/4; ++i){
+		for(int j=0; j<cols/4; ++j){
+			saleny[i][j] =  _Imap[i][j] + _Omap[i][j] + _Cmap[i][j];
+		}
+	}
+
+	imshow(saleny,rows/4,cols/4,"Salency Map!!");
 }
 
 
