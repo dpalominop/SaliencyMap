@@ -89,8 +89,8 @@ void salencyMap::imshow(double **img,int x_length, int y_length){
 
 	Mat out = cv::Mat(x_length, y_length, CV_8UC1);
 
-	for (int i = 0; i < rRows; i++) {
-		for (int j = 0; j < rCols; j++) {
+	for (int i = 0; i < x_length; i++) {
+		for (int j = 0; j < y_length; j++) {
 			out.at<uchar>(i, j) = (uchar)( coeff*(img[i][j]-minImg) );
 		}
 	}
@@ -100,32 +100,11 @@ void salencyMap::imshow(double **img,int x_length, int y_length){
 
 
 void salencyMap::imshow(Mat img){
-	Mat half = Mat( img.rows/2, img.cols/2,  img.type() );
+	Mat half( img.rows/2, img.cols/2,  img.type() );
 	cv::resize(img,half,cv::Size(), 0.5, 0.5);
 	cv::imshow("No quiero jalar!",half);
 	waitKey(0);
 }
-
-
-
-/*
-double maxSalency, minSalency;
-	maxArray(salency,maxSalency,rRows,rCols,THREAD_COUNT);
-	minArray(salency,minSalency,rRows,rCols,THREAD_COUNT);
-
-	double coeff = 255/(maxSalency-minSalency);
-
-	Mat out = cv::Mat(rRows, rCols, CV_8UC1);
-	for (int i = 0; i < rRows; i++) {
-		for (int j = 0; j < rCols; j++) {
-			out.at<uchar>(i, j) = (uchar)( coeff*(salency[i][j]-minSalency) );
-		}
-	}
-
-	imshow("No quiero jalar!",out);
-	waitKey(0);
-*/
-
 
 void salencyMap::getData() {
 /*
@@ -242,18 +221,18 @@ void salencyMap::getData() {
 	Get features
 	------------
  */
-	uint8_t* pixelPtr = (uint8_t*)padImg.data;
-	int cn = padImg.channels();
 	double r, g, b;
 	double aux;
 
-#   pragma omp parallel for collapse(2) num_threads(THREAD_COUNT)
+//#   pragma omp parallel for collapse(2) num_threads(THREAD_COUNT)
 	for (i = 0; i < rows; i++) {
 		for (j = 0; j < cols; j++) {
+			Vec3b bgrPixel = padImg.at<Vec3b>(i, j);
+
 			// Get values
-			b = (double)pixelPtr[i*cols*cn + j * cn + 0]; // B
-			g = (double)pixelPtr[i*cols*cn + j * cn + 1]; // G
-			r = (double)pixelPtr[i*cols*cn + j * cn + 2]; // R
+			b = (double)bgrPixel[0]; // B
+			g = (double)bgrPixel[1]; // G
+			r = (double)bgrPixel[2]; // R
 			
 			aux = (r + g + b) / 3.0;
 			_I   [0][i][j] = aux;
@@ -281,9 +260,6 @@ void salencyMap::getData() {
 void salencyMap::run(){
 	this->getPyramids();
 	this->reductionFeatures();
-
-
-	
 }
 
 void salencyMap::getPyramids() {
@@ -295,19 +271,19 @@ void salencyMap::getPyramids() {
 	Filter gabor135 = Filter(GABOR_135_KERNEL);
 
 	for (int k = 1; k < NUMBER_OF_LEVELS;++k) {
-		gauss   .convolution(_I   [k - 1], rows, cols, _I   [k], THREAD_COUNT, 2);
-		gabor0  .convolution(_O0  [k - 1], rows, cols, _O0  [k], THREAD_COUNT, 2);
-		gabor45 .convolution(_O45 [k - 1], rows, cols, _O45 [k], THREAD_COUNT, 2);
-		gabor90 .convolution(_O90 [k - 1], rows, cols, _O90 [k], THREAD_COUNT, 2);
-		gabor135.convolution(_O135[k - 1], rows, cols, _O135[k], THREAD_COUNT, 2);
+		gauss   .convolution(_I   [k - 1], rows, cols, _I   [k], 2,THREAD_COUNT);
+		gabor0  .convolution(_O0  [k - 1], rows, cols, _O0  [k], 2,THREAD_COUNT);
+		gabor45 .convolution(_O45 [k - 1], rows, cols, _O45 [k], 2,THREAD_COUNT);
+		gabor90 .convolution(_O90 [k - 1], rows, cols, _O90 [k], 2,THREAD_COUNT);
+		gabor135.convolution(_O135[k - 1], rows, cols, _O135[k], 2,THREAD_COUNT);
 
-		gauss.convolution(_R[k - 1], rows, cols, _R[k], THREAD_COUNT, 2);
-		gauss.convolution(_G[k - 1], rows, cols, _G[k], THREAD_COUNT, 2);
-		gauss.convolution(_B[k - 1], rows, cols, _B[k], THREAD_COUNT, 2);
-		gauss.convolution(_Y[k - 1], rows, cols, _Y[k], THREAD_COUNT, 2);
-		
+		gauss.convolution(_R[k - 1], rows, cols, _R[k], 2,THREAD_COUNT);
+		gauss.convolution(_G[k - 1], rows, cols, _G[k], 2,THREAD_COUNT);
+		gauss.convolution(_B[k - 1], rows, cols, _B[k], 2,THREAD_COUNT);
+		gauss.convolution(_Y[k - 1], rows, cols, _Y[k], 2,THREAD_COUNT);
 	}
 	
+	imshow(_I[1],rows,cols);
 }
 
 
@@ -349,24 +325,7 @@ void salencyMap::reductionFeatures() {
 		}
 	}
 
-	salencyMap::imshow(salency,rRows, rCols);
-	/*
-	double maxSalency, minSalency;
-	maxArray(salency,maxSalency,rRows,rCols,THREAD_COUNT);
-	minArray(salency,minSalency,rRows,rCols,THREAD_COUNT);
-
-	double coeff = 255/(maxSalency-minSalency);
-
-	Mat out = cv::Mat(rRows, rCols, CV_8UC1);
-	for (int i = 0; i < rRows; i++) {
-		for (int j = 0; j < rCols; j++) {
-			out.at<uchar>(i, j) = (uchar)( coeff*(salency[i][j]-minSalency) );
-		}
-	}
-
-	cv::imshow("No quiero jalar!",out);
-	waitKey(0);
-	*/
+	//salencyMap::imshow(salency,rRows, rCols);
 }
 
 

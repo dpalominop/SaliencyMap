@@ -100,6 +100,46 @@ bool Filter::convolution(double** image, int x_length, int y_length, double** re
 			double* irow;
 
 			krow = mkernel[0];
+			irow = mImage[i + 2];
+			acumulador += krow[0] * irow[j + 2];
+			acumulador += krow[1] * irow[j + 1];
+			acumulador += krow[2] * irow[j + 0];
+			acumulador += krow[3] * irow[j + -1];
+			acumulador += krow[4] * irow[j + -2];
+
+			krow = mkernel[1];
+			irow = mImage[i + 1];
+			acumulador += krow[0] * irow[j + 2];
+			acumulador += krow[1] * irow[j + 1];
+			acumulador += krow[2] * irow[j + 0];
+			acumulador += krow[3] * irow[j + -1];
+			acumulador += krow[4] * irow[j + -2];
+
+			krow = mkernel[2];
+			irow = mImage[i];
+			acumulador += krow[0] * irow[j + 2];
+			acumulador += krow[1] * irow[j + 1];
+			acumulador += krow[2] * irow[j + 0];
+			acumulador += krow[3] * irow[j + -1];
+			acumulador += krow[4] * irow[j + -2];
+
+			krow = mkernel[3];
+			irow = mImage[i - 1];
+			acumulador += krow[0] * irow[j + 2];
+			acumulador += krow[1] * irow[j + 1];
+			acumulador += krow[2] * irow[j + 0];
+			acumulador += krow[3] * irow[j + -1];
+			acumulador += krow[4] * irow[j + -2];
+
+			krow = mkernel[4];
+			irow = mImage[i - 2];
+			acumulador += krow[0] * irow[j + 2];
+			acumulador += krow[1] * irow[j + 1];
+			acumulador += krow[2] * irow[j + 0];
+			acumulador += krow[3] * irow[j + -1];
+			acumulador += krow[4] * irow[j + -2];
+
+			/*krow = mkernel[0];
 			irow = mImage[i - 2];
 			acumulador += krow[0] * irow[j + -2];
 			acumulador += krow[1] * irow[j + -1];
@@ -137,9 +177,9 @@ bool Filter::convolution(double** image, int x_length, int y_length, double** re
 			acumulador += krow[1] * irow[j + -1];
 			acumulador += krow[2] * irow[j + 0];
 			acumulador += krow[3] * irow[j + 1];
-			acumulador += krow[4] * irow[j + 2];
+			acumulador += krow[4] * irow[j + 2];*/
 
-			result[(i-2)/step][(j-2)/step] = acumulador / 25;
+			result[(i-li_mImage)/step][(j-li_mImage)/step] = acumulador / 25;
 		}
 	}
 
