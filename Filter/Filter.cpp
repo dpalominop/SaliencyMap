@@ -182,7 +182,7 @@ bool Filter::convolution(double** image, int x_length, int y_length, double** re
 			result[(i-li_mImage)/step][(j-li_mImage)/step] = acumulador / 25;
 		}
 	}
-
+/*
 	deleteMemory(mImage, x_mi_length, y_mi_length);
 
 	double** result_k;
@@ -193,7 +193,7 @@ bool Filter::convolution(double** image, int x_length, int y_length, double** re
 	deleteMemory(result, x_length, y_length);
 
 	result = result_k;
-
+*/
 	return true;
 }
 

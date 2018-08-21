@@ -379,29 +379,29 @@ void salencyMap::getMap(double** &feature, double** &map, double kernel[][5]){
 	py.clean();
 
 	// Normalizarion
-	nrm(feat25,rows,cols,THREAD_COUNT);
-	nrm(feat26,rows,cols,THREAD_COUNT);
+	nrm(feat25,rows/4,cols/4,THREAD_COUNT);
+	nrm(feat26,rows/4,cols/4,THREAD_COUNT);
 	
-	for (int i = 0; i < rows; i++) {
-		for (int j = 0; j < cols; j++) {
+	for (int i = 0; i < rows/4; i++) {
+		for (int j = 0; j < cols/4; j++) {
 			map[i][j] += feat25[i][j] + feat26[i][j];
 		}
 	}
 
-	nrm(feat36,rows,cols,THREAD_COUNT);
-	nrm(feat37,rows,cols,THREAD_COUNT);
+	nrm(feat36,rows/4,cols/4,THREAD_COUNT);
+	nrm(feat37,rows/4,cols/4,THREAD_COUNT);
 
-	for (int i = 0; i < rows; i++) {
-		for (int j = 0; j < cols; j++) {
+	for (int i = 0; i < rows/4; i++) {
+		for (int j = 0; j < cols/4; j++) {
 			map[i][j] += feat36[i][j] + feat37[i][j];
 		}
 	}
 
-	nrm(feat47,rows,cols,THREAD_COUNT);
-	nrm(feat48,rows,cols,THREAD_COUNT);
+	nrm(feat47,rows/4,cols/4,THREAD_COUNT);
+	nrm(feat48,rows/4,cols/4,THREAD_COUNT);
 
-	for (int i = 0; i < rows; i++) {
-		for (int j = 0; j < cols; j++) {
+	for (int i = 0; i < rows/4; i++) {
+		for (int j = 0; j < cols/4; j++) {
 			map[i][j] += feat47[i][j] + feat48[i][j];
 		}
 	}
