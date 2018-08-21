@@ -4,6 +4,7 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include "opencv2/imgproc/imgproc.hpp"
 #include <iostream>
 #include <stdio.h> 
 #include <math.h>
@@ -56,6 +57,9 @@ private:
 	void centerSurroundDiff(double***pyramid, double** difference, int firstLevel, int secondLevel);
 	void absDifference(double** out, double** first, double** second, int rows, int cols);
 
+	void imshow(Mat img);
+	void imshow(double **img,int x_length, int y_length);
+
 public:
 	salencyMap() {
 		_I    = new double**[NUMBER_OF_LEVELS];
@@ -73,6 +77,54 @@ public:
 	void getData();
 	void run();
 };
+
+
+void salencyMap::imshow(double **img,int x_length, int y_length){
+	double maxImg, minImg, coeff;
+
+	maxArray(img,maxImg,x_length,y_length,THREAD_COUNT);
+	minArray(img,minImg,x_length,y_length,THREAD_COUNT);
+
+	coeff = 255/(maxImg-minImg);
+
+	Mat out = cv::Mat(x_length, y_length, CV_8UC1);
+
+	for (int i = 0; i < rRows; i++) {
+		for (int j = 0; j < rCols; j++) {
+			out.at<uchar>(i, j) = (uchar)( coeff*(img[i][j]-minImg) );
+		}
+	}
+
+	salencyMap::imshow(out);
+}
+
+
+void salencyMap::imshow(Mat img){
+	Mat half = Mat( img.rows/2, img.cols/2,  img.type() );
+	cv::resize(img,half,cv::Size(), 0.5, 0.5);
+	cv::imshow("No quiero jalar!",half);
+	waitKey(0);
+}
+
+
+
+/*
+double maxSalency, minSalency;
+	maxArray(salency,maxSalency,rRows,rCols,THREAD_COUNT);
+	minArray(salency,minSalency,rRows,rCols,THREAD_COUNT);
+
+	double coeff = 255/(maxSalency-minSalency);
+
+	Mat out = cv::Mat(rRows, rCols, CV_8UC1);
+	for (int i = 0; i < rRows; i++) {
+		for (int j = 0; j < rCols; j++) {
+			out.at<uchar>(i, j) = (uchar)( coeff*(salency[i][j]-minSalency) );
+		}
+	}
+
+	imshow("No quiero jalar!",out);
+	waitKey(0);
+*/
 
 
 void salencyMap::getData() {
@@ -131,8 +183,8 @@ void salencyMap::getData() {
 	int pad2R = pad1R + rRows;
 	int pad2C = pad1C + rCols;
 
-	int startR = rRows - (rows - pad2R);
-	int startC = rCols - (cols - pad2C);
+	int startR = pad2R - (rows - pad2R);
+	int startC = pad2C - (cols - pad2C);
 
 	startRealR = pad1R;
 	startRealC = pad1C;
@@ -153,7 +205,7 @@ void salencyMap::getData() {
 
 	// Right Padding
 	for (i = pad1R;i < pad2R;++i) {
-		for (jp = cols - 1, j = startC - 1; jp >= pad2C; ++j, --jp) {
+		for (jp = cols - 1, j = startC; jp >= pad2C; ++j, --jp) {
 			padImg.at<Vec3b>(i, jp) = padImg.at<Vec3b>(i, j);
 		}
 	}
@@ -166,12 +218,13 @@ void salencyMap::getData() {
 	}
 
 	// Lower Padding
-	for (ip = rows - 1, i = startR - 1; ip >= pad2R; ++i, --ip) {
+	for (ip = rows - 1, i = startR; ip >= pad2R; ++i, --ip) {
 		for (j = 0; j < cols; ++j) {
 			padImg.at<Vec3b>(ip, j) = padImg.at<Vec3b>(i, j);
 		}
 	}
 
+	//salencyMap::imshow(padImg);
 
 /*
 	Inicialize
@@ -296,6 +349,8 @@ void salencyMap::reductionFeatures() {
 		}
 	}
 
+	salencyMap::imshow(salency,rRows, rCols);
+	/*
 	double maxSalency, minSalency;
 	maxArray(salency,maxSalency,rRows,rCols,THREAD_COUNT);
 	minArray(salency,minSalency,rRows,rCols,THREAD_COUNT);
@@ -309,8 +364,9 @@ void salencyMap::reductionFeatures() {
 		}
 	}
 
-	imshow("No quiero jalar!",out);
+	cv::imshow("No quiero jalar!",out);
 	waitKey(0);
+	*/
 }
 
 
