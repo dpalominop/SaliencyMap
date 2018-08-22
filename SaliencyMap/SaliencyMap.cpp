@@ -174,9 +174,9 @@ void SaliencyMap::run() {
 	this->getMap(_Y, _Cmap, GAUSS_KERNEL);
 
 	// Print images
-	//SaliencyMap::imshow(_Imap, rows / 4, cols / 4, "Mapa de Intensidad");
-	//SaliencyMap::imshow(_Omap, rows / 4, cols / 4, "Mapa de Orientacion");
-	//SaliencyMap::imshow(_Cmap, rows / 4, cols / 4, "Mapa de Color");
+	SaliencyMap::imshow(_Imap, rows / 4, cols / 4, "Mapa de Intensidad");
+	SaliencyMap::imshow(_Omap, rows / 4, cols / 4, "Mapa de Orientacion");
+	SaliencyMap::imshow(_Cmap, rows / 4, cols / 4, "Mapa de Color");
 
 	this->getSalency();
 }
@@ -250,17 +250,21 @@ void SaliencyMap::centerSurroundDiff(double** &supLevel, double** &lowLevel, dou
 	int lowCol = cols / pow2(low);
 
 	double **growLowLevel = allocate(supRow, supCol);
-	Filter::growthMatrix(lowLevel, lowRow, lowCol, growLowLevel, pow2(sup - low), THREAD_COUNT);
+	Filter::growthMatrix(lowLevel, lowRow, lowCol, growLowLevel, pow2(low - sup), THREAD_COUNT);
 
 	if (sup != endl) {
 		double **rawDifference = allocate(supRow, supCol);
 
 		absDifference(rawDifference, supLevel, growLowLevel, supRow, supCol);
-		Filter::growthMatrix(rawDifference, supRow, supCol, difference, pow2(endl - sup), THREAD_COUNT);
+		Filter::growthMatrix(rawDifference, supRow, supCol, difference, pow2(sup - endl), THREAD_COUNT);
+
+		Filter::deleteMemory(rawDifference, supRow, supCol);
 	}
 	else {
 		absDifference(difference, supLevel, growLowLevel, supRow, supCol);
 	}
+
+	Filter::deleteMemory(growLowLevel, supRow, supCol);
 }
 
 void SaliencyMap::absDifference(double** out, double** first, double** second, int rows, int cols) {
