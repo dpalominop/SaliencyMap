@@ -139,61 +139,12 @@ bool Filter::convolution(double** image, int x_length, int y_length, double** re
 			acumulador += krow[3] * irow[j + -1];
 			acumulador += krow[4] * irow[j + -2];
 
-			/*krow = mkernel[0];
-			irow = mImage[i - 2];
-			acumulador += krow[0] * irow[j + -2];
-			acumulador += krow[1] * irow[j + -1];
-			acumulador += krow[2] * irow[j + 0];
-			acumulador += krow[3] * irow[j + 1];
-			acumulador += krow[4] * irow[j + 2];
-
-			krow = mkernel[1];
-			irow = mImage[i - 1];
-			acumulador += krow[0] * irow[j + -2];
-			acumulador += krow[1] * irow[j + -1];
-			acumulador += krow[2] * irow[j + 0];
-			acumulador += krow[3] * irow[j + 1];
-			acumulador += krow[4] * irow[j + 2];
-
-			krow = mkernel[2];
-			irow = mImage[i];
-			acumulador += krow[0] * irow[j + -2];
-			acumulador += krow[1] * irow[j + -1];
-			acumulador += krow[2] * irow[j + 0];
-			acumulador += krow[3] * irow[j + 1];
-			acumulador += krow[4] * irow[j + 2];
-
-			krow = mkernel[3];
-			irow = mImage[i + 1];
-			acumulador += krow[0] * irow[j + -2];
-			acumulador += krow[1] * irow[j + -1];
-			acumulador += krow[2] * irow[j + 0];
-			acumulador += krow[3] * irow[j + 1];
-			acumulador += krow[4] * irow[j + 2];
-
-			krow = mkernel[4];
-			irow = mImage[i + 2];
-			acumulador += krow[0] * irow[j + -2];
-			acumulador += krow[1] * irow[j + -1];
-			acumulador += krow[2] * irow[j + 0];
-			acumulador += krow[3] * irow[j + 1];
-			acumulador += krow[4] * irow[j + 2];*/
-
 			result[(i-li_mImage)/step][(j-li_mImage)/step] = acumulador / 25;
 		}
 	}
-/*
+
 	deleteMemory(mImage, x_mi_length, y_mi_length);
 
-	double** result_k;
-
-	reserveMemory(result_k, x_length, y_length);
-	growthMatrix(result,x_length/2,y_length/2,result_k,2,thread_count);
-
-	deleteMemory(result, x_length, y_length);
-
-	result = result_k;
-*/
 	return true;
 }
 
@@ -274,8 +225,8 @@ bool Filter::growthMatrix(double** matrix, int x, int y, double** &result, int k
 
 #pragma omp parallel for collapse(2) num_threads(thread_count) shared(matrix, result)
 	for (int i = 0; i < x; i++) {
-		for (int p = 1; p < k; p++) {
-			result[i*k][(y-1)*k + p] = matrix[i][y-1] + p * (matrix[i][y - 1] - matrix[i][y - 2]) / k;
+		for (int p = 0; p < k; p++) {
+			result[i*k][(y-1)*k + p] = matrix[i][y-1] + p * ((matrix[i][y - 1] - matrix[i][y - 2])/k);
 		}
 	}
 
@@ -283,7 +234,7 @@ bool Filter::growthMatrix(double** matrix, int x, int y, double** &result, int k
 	for (int i = 0; i < x-1; i++) {
 		for (int p = 0; p < k; p++) {
 			for (int j = 0; j < y; j ++) {
-				result[i*k+p][j*k] = matrix[i][j] + p * (matrix[i+1][j] - matrix[i][j])/k;
+				result[i*k+p][j*k] = matrix[i][j] + p * ((matrix[i+1][j] - matrix[i][j])/k);
 			}
 		}
 	}
@@ -291,7 +242,7 @@ bool Filter::growthMatrix(double** matrix, int x, int y, double** &result, int k
 #pragma omp parallel for collapse(2) num_threads(thread_count) shared(matrix, result)
 	for (int p = 0; p < k; p++) {
 		for (int j = 0; j < y; j++) {
-			result[(x-1)*k + p][j*k] = matrix[x-1][j] + p * (matrix[x-1][j] - matrix[x-2][j]) / k;
+			result[(x-1)*k + p][j*k] = matrix[x-1][j] + p * ((matrix[x-1][j] - matrix[x-2][j])/k);
 		}
 	}
 
