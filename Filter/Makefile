@@ -1,11 +1,11 @@
 all: build
 
-build: main.cpp
+build: test.cpp
 	mkdir -p out
-	g++ -fopenmp -o out/gb -std=c++11 -I. main.cpp Filter.cpp
+	g++ -fopenmp -o out/gb -std=c++11 -I. test.cpp Filter.cpp
 
 exec: build
-	./out/gb
+	./out/test
 
 clean:
 	rm -rf out

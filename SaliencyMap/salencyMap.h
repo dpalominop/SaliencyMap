@@ -10,7 +10,7 @@
 #include <math.h>
 #include <string>
 #include "kernel.h"
-#include "Filter/Filter.h"
+#include "../Filter/Filter.h"
 #include "utils.h"
 
 #define NUMBER_OF_LEVELS 9

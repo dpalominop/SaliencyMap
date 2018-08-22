@@ -265,3 +265,6 @@ out/
 
 # Python
 env
+
+# Exec
+out

@@ -5,6 +5,13 @@ VisualStudioVersion = 15.0.28010.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Filter", "Filter\Filter.vcxproj", "{F35102B8-67F5-4034-BADF-1ACF09F0B392}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{176F5520-D423-4105-BD6C-EFDA507EA864}"
+	ProjectSection(SolutionItems) = preProject
+		Makefile = Makefile
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SaliencyMap", "SaliencyMap\SaliencyMap.vcxproj", "{5193A5D7-A702-4E7C-BABC-295142530646}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM
@@ -33,6 +40,22 @@ Global
 		{F35102B8-67F5-4034-BADF-1ACF09F0B392}.Release|x64.Build.0 = Release|x64
 		{F35102B8-67F5-4034-BADF-1ACF09F0B392}.Release|x86.ActiveCfg = Release|x86
 		{F35102B8-67F5-4034-BADF-1ACF09F0B392}.Release|x86.Build.0 = Release|x86
+		{5193A5D7-A702-4E7C-BABC-295142530646}.Debug|ARM.ActiveCfg = Debug|ARM
+		{5193A5D7-A702-4E7C-BABC-295142530646}.Debug|ARM.Build.0 = Debug|ARM
+		{5193A5D7-A702-4E7C-BABC-295142530646}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{5193A5D7-A702-4E7C-BABC-295142530646}.Debug|ARM64.Build.0 = Debug|ARM64
+		{5193A5D7-A702-4E7C-BABC-295142530646}.Debug|x64.ActiveCfg = Debug|x64
+		{5193A5D7-A702-4E7C-BABC-295142530646}.Debug|x64.Build.0 = Debug|x64
+		{5193A5D7-A702-4E7C-BABC-295142530646}.Debug|x86.ActiveCfg = Debug|x86
+		{5193A5D7-A702-4E7C-BABC-295142530646}.Debug|x86.Build.0 = Debug|x86
+		{5193A5D7-A702-4E7C-BABC-295142530646}.Release|ARM.ActiveCfg = Release|ARM
+		{5193A5D7-A702-4E7C-BABC-295142530646}.Release|ARM.Build.0 = Release|ARM
+		{5193A5D7-A702-4E7C-BABC-295142530646}.Release|ARM64.ActiveCfg = Release|ARM64
+		{5193A5D7-A702-4E7C-BABC-295142530646}.Release|ARM64.Build.0 = Release|ARM64
+		{5193A5D7-A702-4E7C-BABC-295142530646}.Release|x64.ActiveCfg = Release|x64
+		{5193A5D7-A702-4E7C-BABC-295142530646}.Release|x64.Build.0 = Release|x64
+		{5193A5D7-A702-4E7C-BABC-295142530646}.Release|x86.ActiveCfg = Release|x86
+		{5193A5D7-A702-4E7C-BABC-295142530646}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
