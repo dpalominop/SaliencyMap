@@ -1,5 +1,4 @@
 # SaliencyMap
-Saliency Map Multi Threading using OpenMP.
 
 Nuestra atención se ve atraída por estímulos visualmente destacados. Es importante que los sistemas biológicos complejos detecten rápidamente presas, depredadores o parejas potenciales en un mundo visual desordenado. Sin embargo, la identificación simultánea de todos y cada uno de los objetivos interesantes en el campo visual tiene una complejidad computacional prohibitiva que la convierte en una tarea desalentadora incluso para los cerebros biológicos más sofisticados (Tsotsos, 1991), y mucho menos para cualquier computadora existente. Una solución, adoptada por los primates y muchos otros animales, es restringir el proceso de reconocimiento de objetos complejos a un área pequeña o unos pocos objetos al mismo tiempo.
 
