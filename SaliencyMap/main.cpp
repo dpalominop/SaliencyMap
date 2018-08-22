@@ -1,4 +1,4 @@
-#include "salencyMap.h"
+#include "SaliencyMap.h"
 
 
 int main(int argc, char const *argv[]){

@@ -3,8 +3,9 @@
 #define UTILS_H
 
 #include <math.h>
+#include <omp.h>
 
-void minArray(double **arr, double &minimum, int rows, int cols, int thread_count) {
+static void minArray(double **arr, double &minimum, int rows, int cols, int thread_count) {
 	int i, j;
 	minimum = 99999999.999;
 
@@ -15,7 +16,7 @@ void minArray(double **arr, double &minimum, int rows, int cols, int thread_coun
 				minimum = arr[i][j];
 }
 
-void maxArray(double **arr, double &maximum, int rows, int cols, int thread_count) {
+static void maxArray(double **arr, double &maximum, int rows, int cols, int thread_count) {
 	int i, j;
 	maximum = -99999999.999;
 
@@ -26,7 +27,7 @@ void maxArray(double **arr, double &maximum, int rows, int cols, int thread_coun
 				maximum = arr[i][j];
 }
 
-void meanArray(double **arr, double &mean, int rows, int cols, int thread_count) {
+static void meanArray(double **arr, double &mean, int rows, int cols, int thread_count) {
 	int i, j;
 	mean = 0.0;
 
@@ -38,7 +39,7 @@ void meanArray(double **arr, double &mean, int rows, int cols, int thread_count)
 	mean = mean / (rows*cols);
 }
 
-void norm1Array(double **arr, double &norm, int rows, int cols, int thread_count) {
+static void norm1Array(double **arr, double &norm, int rows, int cols, int thread_count) {
 	int i, j;
 	double sum;
 	norm = -99999999.999;
@@ -55,7 +56,7 @@ void norm1Array(double **arr, double &norm, int rows, int cols, int thread_count
 }
 
 
-void normInfArray(double **arr, double &norm, int rows, int cols, int thread_count) {
+static void normInfArray(double **arr, double &norm, int rows, int cols, int thread_count) {
 	int i, j;
 	double sum;
 	norm = -99999999.999;
@@ -72,7 +73,7 @@ void normInfArray(double **arr, double &norm, int rows, int cols, int thread_cou
 }
 
 
-void norm2Array(double **arr, double &norm, int rows, int cols, int thread_count) {
+static void norm2Array(double **arr, double &norm, int rows, int cols, int thread_count) {
 	double norma1, normaInf;
 
 	norm1Array(arr, norma1  , rows, cols, thread_count);
@@ -82,7 +83,7 @@ void norm2Array(double **arr, double &norm, int rows, int cols, int thread_count
 }
 
 
-void nrm(double** &arr, int rows, int cols, int thread_count){
+static void nrm(double** &arr, int rows, int cols, int thread_count){
 	double _norm, _max, _mean;
 	double coeff;
 
@@ -100,42 +101,96 @@ void nrm(double** &arr, int rows, int cols, int thread_count){
 	}
 }
 
-
-bool interpolation(double** matrix, int x, int y, double** &result, int k, int thread_count) {
-#pragma omp parallel for collapse(2) num_threads(thread_count) shared(matrix, result)
-	for (int i = 0; i < x; i++) {
-		for (int j = 0; j < y-1; j++) {
-			double factor = (matrix[i][j + 1] - matrix[i][j]) / k;
-			for (int p = 0; p < k; p++) {
-				result[i*k][j*k + p] = matrix[i][j] + p * factor;
-			}
-		}
+static double ** allocate(int rows, int cols) {
+	double ** dPointer = new double*[rows];
+	for (int i = 0; i < rows; ++i) {
+		dPointer[i] = new double[cols];
 	}
-
-#pragma omp parallel for collapse(2) num_threads(thread_count) shared(matrix, result)
-	for (int i = 0; i < x; i++) {
-		for (int p = 1; p < k; p++) {
-			result[i*k][(y-1)*k + p] = matrix[i][y-1] + p * (matrix[i][y - 1] - matrix[i][y - 2]) / k;
-		}
-	}
-
-#pragma omp parallel for collapse(2) num_threads(thread_count) shared(matrix, result)
-	for (int i = 0; i < x-1; i++) {
-		for (int p = 0; p < k; p++) {
-			for (int j = 0; j < y; j ++) {
-				result[i*k+p][j*k] = matrix[i][j] + p * (matrix[i+1][j] - matrix[i][j])/k;
-			}
-		}
-	}
-
-#pragma omp parallel for collapse(2) num_threads(thread_count) shared(matrix, result)
-	for (int p = 0; p < k; p++) {
-		for (int j = 0; j < y; j++) {
-			result[(x-1)*k + p][j*k] = matrix[x-1][j] + p * (matrix[x-1][j] - matrix[x-2][j]) / k;
-		}
-	}
-
-	return true;
+	return dPointer;
 }
+
+static int pow2(int pot) {
+	int out = 1;
+	for (int i = 0; i < pot; ++i) out *= 2;
+	return out;
+}
+
+
+struct Pyramid {
+	double **_Base;
+	double **_Level1;
+	double **_Level2;
+	double **_Level3;
+	double **_Level4;
+	double **_Level5;
+	double **_Level6;
+	double **_Level7;
+	double **_Level8;
+	int rows;
+	int cols;
+
+	Pyramid(int _rows, int _cols) : rows(_rows), cols(_cols) {
+		int c;
+
+		_Base = new double*[rows];
+		for (int i = 0; i < rows; ++i) _Base[i] = new double[rows];
+
+		c = 2; _Level1 = new double*[rows / c];
+		for (int i = 0; i < rows / c; ++i) _Level1[i] = new double[rows / c];
+
+		c = 4; _Level2 = new double*[rows / c];
+		for (int i = 0; i < rows / c; ++i) _Level2[i] = new double[rows / c];
+
+		c = 8; _Level3 = new double*[rows / c];
+		for (int i = 0; i < rows / c; ++i) _Level3[i] = new double[rows / c];
+
+		c = 16; _Level4 = new double*[rows / c];
+		for (int i = 0; i < rows / c; ++i) _Level4[i] = new double[rows / c];
+
+		c = 32; _Level5 = new double*[rows / c];
+		for (int i = 0; i < rows / c; ++i) _Level5[i] = new double[rows / c];
+
+		c = 64; _Level6 = new double*[rows / c];
+		for (int i = 0; i < rows / c; ++i) _Level6[i] = new double[rows / c];
+
+		c = 128; _Level7 = new double*[rows / c];
+		for (int i = 0; i < rows / c; ++i) _Level7[i] = new double[rows / c];
+
+		c = 256; _Level8 = new double*[rows / c];
+		for (int i = 0; i < rows / c; ++i) _Level8[i] = new double[rows / c];
+	}
+
+	void clean() {
+		int c;
+
+		for (int i = 0; i < rows; ++i) delete[] _Base[i];
+		delete[] _Base;
+
+		c = 2; for (int i = 0; i < rows / c; ++i) delete[] _Level1[i];
+		delete[] _Level1;
+
+		c = 4; for (int i = 0; i < rows / c; ++i) delete[] _Level2[i];
+		delete[] _Level2;
+
+		c = 8; for (int i = 0; i < rows / c; ++i) delete[] _Level3[i];
+		delete[] _Level3;
+
+		c = 16; for (int i = 0; i < rows / c; ++i) delete[] _Level4[i];
+		delete[] _Level4;
+
+		c = 32; for (int i = 0; i < rows / c; ++i) delete[] _Level5[i];
+		delete[] _Level5;
+
+		c = 64; for (int i = 0; i < rows / c; ++i) delete[] _Level6[i];
+		delete[] _Level6;
+
+		c = 128; for (int i = 0; i < rows / c; ++i) delete[] _Level7[i];
+		delete[] _Level7;
+
+		c = 256; for (int i = 0; i < rows / c; ++i) delete[] _Level8[i];
+		delete[] _Level8;
+
+	}
+};
 
 #endif

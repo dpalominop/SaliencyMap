@@ -76,10 +76,11 @@
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="SaliencyMap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="kernel.h" />
-    <ClInclude Include="salencyMap.h" />
+    <ClInclude Include="SaliencyMap.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

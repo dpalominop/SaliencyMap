@@ -1,6 +1,6 @@
 CC = g++
 CFLAGS = -g -Wall -fopenmp -o3
-SRCS = SaliencyMap/main.cpp Filter/Filter.cpp SaliencyMap/utils.h
+SRCS = SaliencyMap/main.cpp Filter/Filter.cpp SaliencyMap/SaliencyMap.cpp SaliencyMap/utils.h SaliencyMap/kernel.h
 PROG = out
 
 OPENCV = `pkg-config opencv --cflags --libs`
