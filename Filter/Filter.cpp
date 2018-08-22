@@ -18,7 +18,7 @@ Filter::~Filter() {
 	deleteMemory(mkernel, klength, klength);
 }
 
-Filter::Filter(double kernel[][dim_kernel]) {
+Filter::Filter(const double kernel[][dim_kernel]) {
 	//ASSERT(length(kernel) == dim_kernel);
 
 	klength = dim_kernel;// length(kernel);
@@ -44,7 +44,7 @@ Filter::Filter(double** kernel, int n) {
 	}
 }
 
-bool Filter::setKernel(double kernel[][dim_kernel]) {
+bool Filter::setKernel(const double kernel[][dim_kernel]) {
 	//ASSERT(length(kernel) == dim_kernel);
 
 	klength = dim_kernel;

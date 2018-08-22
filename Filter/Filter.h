@@ -29,11 +29,11 @@ private:
 
 public:
 	Filter();
-	Filter(double kernel[][dim_kernel]);
+	Filter(const double kernel[][dim_kernel]);
 	Filter(double** kernel, int n);
 	~Filter();
 
-	bool setKernel(double kernel[][dim_kernel]);
+	bool setKernel(const double kernel[][dim_kernel]);
 	bool setKernel(double** kernel, int n);
 	bool showKernel();
 	bool convolution(double** image, int x_length, int y_length, double** result, int step, int thread_count);
