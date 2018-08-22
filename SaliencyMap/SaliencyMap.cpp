@@ -1,6 +1,6 @@
 #include "SaliencyMap.h"
 
-void salencyMap::getData() {
+void SaliencyMap::getData() {
 	/*
 		Get image
 		---------
@@ -97,7 +97,7 @@ void salencyMap::getData() {
 		}
 	}
 
-	//salencyMap::imshow(padImg);
+	//SaliencyMap::imshow(padImg);
 
 /*
 	Inicialize
@@ -162,7 +162,7 @@ void salencyMap::getData() {
 
 }
 
-void salencyMap::run() {
+void SaliencyMap::run() {
 	this->getMap(_I, _Imap, GAUSS_KERNEL);
 	this->getMap(_O0, _Omap, GABOR_00_KERNEL);
 	this->getMap(_O45, _Omap, GABOR_45_KERNEL);
@@ -174,14 +174,14 @@ void salencyMap::run() {
 	this->getMap(_Y, _Cmap, GAUSS_KERNEL);
 
 	// Print images
-	//salencyMap::imshow(_Imap, rows / 4, cols / 4, "Mapa de Intensidad");
-	//salencyMap::imshow(_Omap, rows / 4, cols / 4, "Mapa de Orientacion");
-	//salencyMap::imshow(_Cmap, rows / 4, cols / 4, "Mapa de Color");
+	//SaliencyMap::imshow(_Imap, rows / 4, cols / 4, "Mapa de Intensidad");
+	//SaliencyMap::imshow(_Omap, rows / 4, cols / 4, "Mapa de Orientacion");
+	//SaliencyMap::imshow(_Cmap, rows / 4, cols / 4, "Mapa de Color");
 
 	this->getSalency();
 }
 
-void salencyMap::getMap(double** &feature, double** &map, const double kernel[][5]) {
+void SaliencyMap::getMap(double** &feature, double** &map, const double kernel[][5]) {
 	Pyramid py(rows, cols);
 	Filter blur(kernel);
 
@@ -242,7 +242,7 @@ void salencyMap::getMap(double** &feature, double** &map, const double kernel[][
 }
 
 
-void salencyMap::centerSurroundDiff(double** &supLevel, double** &lowLevel, double ** &difference, int sup, int low, int endl) {
+void SaliencyMap::centerSurroundDiff(double** &supLevel, double** &lowLevel, double ** &difference, int sup, int low, int endl) {
 	int supRow = rows / pow2(sup);
 	int supCol = cols / pow2(sup);
 
@@ -263,7 +263,7 @@ void salencyMap::centerSurroundDiff(double** &supLevel, double** &lowLevel, doub
 	}
 }
 
-void salencyMap::absDifference(double** out, double** first, double** second, int rows, int cols) {
+void SaliencyMap::absDifference(double** out, double** first, double** second, int rows, int cols) {
 	double a, b;
 
 #pragma omp parallel for collapse(2) num_threads(THREAD_COUNT)
@@ -277,7 +277,7 @@ void salencyMap::absDifference(double** out, double** first, double** second, in
 }
 
 
-void salencyMap::getSalency() {
+void SaliencyMap::getSalency() {
 	double **saleny = allocate(rows / 4, cols / 4);
 
 	for (int i = 0; i < rows / 4; ++i) {
@@ -286,11 +286,11 @@ void salencyMap::getSalency() {
 		}
 	}
 
-	salencyMap::imshow(saleny, rows / 4, cols / 4, "Salency Map!!");
+	SaliencyMap::imshow(saleny, rows / 4, cols / 4, "Salency Map!!");
 }
 
 
-void salencyMap::imshow(double **img, int x_length, int y_length, std::string name = "Una ventana") {
+void SaliencyMap::imshow(double **img, int x_length, int y_length, std::string name = "Una ventana") {
 	double maxImg, minImg, coeff;
 
 	maxArray(img, maxImg, x_length, y_length, THREAD_COUNT);
@@ -306,11 +306,11 @@ void salencyMap::imshow(double **img, int x_length, int y_length, std::string na
 		}
 	}
 
-	salencyMap::imshow(out, name);
+	SaliencyMap::imshow(out, name);
 }
 
 
-void salencyMap::imshow(Mat img, std::string name = "Una ventana") {
+void SaliencyMap::imshow(Mat img, std::string name = "Una ventana") {
 	//Mat half( img.rows/2, img.cols/2,  img.type() );
 	//cv::resize(img,half,cv::Size(), 0.5, 0.5);
 	cv::imshow(name, img);

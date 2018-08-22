@@ -21,7 +21,7 @@
 
 using namespace cv;
 
-class salencyMap
+class SaliencyMap
 {
 private:
 	// Image date
