@@ -58,7 +58,7 @@ private:
 	void imshow(double **img,int x_length, int y_length, std::string name);
 
 public:
-	salencyMap(std::string direction): _dir(direction) {
+	SaliencyMap(std::string direction): _dir(direction) {
 		this->getData();
 	}
 
