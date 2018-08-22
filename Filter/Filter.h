@@ -47,7 +47,7 @@ public:
 	static bool deleteMemory(double** &matrix, int x, int y);
 	static bool reserveMemory(double** &matrix, int x, int y);
 
-	static bool growthMatrix(double** matrix, int x, int y, double** &result, int k, int thread_count);
+	static bool growthMatrix(double** matrix, int x, int y, double** result, int k, int thread_count);
 
 };
 

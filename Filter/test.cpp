@@ -27,12 +27,12 @@ int main(int argc, char** argv) {
 	double** kernel;
 	double** image;
 	double** result;
-	double** resultx2;
-	
+	double** resultx4;
+
 	Filter::reserveMemory(kernel, dim_kernel, dim_kernel);
 	Filter::reserveMemory(image, dim_image, dim_image);
 	Filter::reserveMemory(result, dim_image, dim_image);
-	Filter::reserveMemory(resultx2, dim_image*2, dim_image*2);
+	Filter::reserveMemory(resultx4, dim_image*4, dim_image*4);
 
 	Filter::generateData(kernel, dim_kernel, dim_kernel);
 	Filter::generateData(image, dim_image, dim_image);
@@ -83,13 +83,13 @@ int main(int argc, char** argv) {
 	cout << "Minimal Total Time: " << time_final - time_init << endl;
 
 	cout << "-------------------------------" << endl;
-	Filter::growthMatrix(image, dim_image, dim_image, resultx2, 2, thread_count);
-	Filter::showData(resultx2, dim_image * 2, dim_image * 2);
+	Filter::growthMatrix(image, dim_image, dim_image, resultx4, 4, thread_count);
+	Filter::showData(resultx4, dim_image * 4, dim_image * 4);
 
 	Filter::deleteMemory(kernel, dim_kernel, dim_kernel);
 	Filter::deleteMemory(image, dim_image, dim_image);
 	Filter::deleteMemory(result, dim_image, dim_image);
-	Filter::deleteMemory(resultx2, dim_image*2, dim_image*2);
+	Filter::deleteMemory(resultx4, dim_image*4, dim_image*4);
 
 	return 0;
 }
