@@ -24,10 +24,10 @@ Filter::Filter(const double kernel[][dim_kernel]) {
 	klength = dim_kernel;// length(kernel);
 	if (reserveMemory(mkernel, klength, klength)) {
 		setKernel(kernel);
-		std::cout << "Kernel created" << std::endl;
+		//std::cout << "Kernel created" << std::endl;
 	}
 	else {
-		std::cout << "Error in Kernel creation!" << std::endl;
+		//std::cout << "Error in Kernel creation!" << std::endl;
 	}
 }
 
@@ -37,10 +37,10 @@ Filter::Filter(double** kernel, int n) {
 	klength = n;
 	if (reserveMemory(mkernel, klength, klength)) {
 		setKernel(kernel, n);
-		std::cout << "Kernel created" << std::endl;
+		//std::cout << "Kernel created" << std::endl;
 	}
 	else {
-		std::cout << "Error in Kernel creation!" << std::endl;
+		//std::cout << "Error in Kernel creation!" << std::endl;
 	}
 }
 

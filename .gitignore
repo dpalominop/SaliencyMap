@@ -268,3 +268,6 @@ env
 
 # Exec
 out
+
+# vscode folder
+.vscode

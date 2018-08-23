@@ -17,7 +17,7 @@
 
 
 #define NUMBER_OF_LEVELS 9
-#define THREAD_COUNT     4
+#define THREAD_COUNT     1
 
 using namespace cv;
 
@@ -34,12 +34,15 @@ private:
 	double **_Imap, **_Omap,
 	       **_Cmap;
 
+	double **_Salency;
+
 	std::string _dir;
 
 	int rRows, rCols;  // Real size
 	int  rows, cols;  // Square size
 
-	int startRealR, startRealC;
+	int pad1R, pad1C;
+	int pad2R, pad2C;
 
 	// Principal functions
 	void getPyramids();
@@ -56,7 +59,7 @@ private:
 
 	void imshow(Mat img, std::string name);
 	void imshow(double **img,int x_length, int y_length, std::string name);
-
+	
 public:
 	SaliencyMap(std::string direction): _dir(direction) {
 		this->getData();
@@ -64,6 +67,7 @@ public:
 
 	void getData();
 	void run();
+	void showSalency();
 
 	void setDirImage(std::string direction){ _dir = direction; }
 };

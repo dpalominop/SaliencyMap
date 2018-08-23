@@ -9,7 +9,7 @@ static void minArray(double **arr, double &minimum, int rows, int cols, int thre
 	int i, j;
 	minimum = 99999999.999;
 
-//#   pragma omp parallel for collapse(2) num_threads(thread_count) reduction(min:minimum)
+#   pragma omp parallel for collapse(2) num_threads(thread_count) reduction(min:minimum)
 	for (i = 0;i < rows;i++)
 		for (j = 0;j < cols;j++)
 			if (arr[i][j] < minimum)
@@ -20,7 +20,7 @@ static void maxArray(double **arr, double &maximum, int rows, int cols, int thre
 	int i, j;
 	maximum = -99999999.999;
 
-//#   pragma omp parallel for collapse(2) num_threads(thread_count) reduction(max:maximum)
+#   pragma omp parallel for collapse(2) num_threads(thread_count) reduction(max:maximum)
 	for (i = 0;i < rows;i++)
 		for (j = 0;j < cols;j++)
 			if (arr[i][j] > maximum)
@@ -31,7 +31,7 @@ static void meanArray(double **arr, double &mean, int rows, int cols, int thread
 	int i, j;
 	mean = 0.0;
 
-//#   pragma omp parallel for collapse(2) num_threads(thread_count) reduction(+:mean)
+#   pragma omp parallel for collapse(2) num_threads(thread_count) reduction(+:mean)
 	for (i = 0;i < rows;i++)
 		for (j = 0;j < cols;j++)
 			mean += arr[i][j];
@@ -44,7 +44,7 @@ static void norm1Array(double **arr, double &norm, int rows, int cols, int threa
 	double sum;
 	norm = -99999999.999;
 
-//#   pragma omp parallel for num_threads(thread_count) reduction(max:norm)
+#   pragma omp parallel for num_threads(thread_count) reduction(max:norm)
 	for (j = 0;j < cols;j++) {
 		sum = 0.0;
 		for (i = 0; i < rows;++i) {
@@ -61,7 +61,7 @@ static void normInfArray(double **arr, double &norm, int rows, int cols, int thr
 	double sum;
 	norm = -99999999.999;
 
-//#   pragma omp parallel for num_threads(thread_count) reduction(max:norm)
+#   pragma omp parallel for num_threads(thread_count) reduction(max:norm)
 	for (i = 0;i < rows; i++) {
 		sum = 0.0;
 		for (j = 0; j < cols; ++j) {
@@ -87,11 +87,9 @@ static void nrm(double** &arr, int rows, int cols, int thread_count){
 	double _norm, _max, _mean;
 	double coeff;
 
-	  maxArray(arr, _max , rows, cols, thread_count);
-	 meanArray(arr, _mean, rows, cols, thread_count);
-	norm2Array(arr, _norm, rows, cols, thread_count);
+	normInfArray(arr, _norm, rows, cols, thread_count);
 
-	coeff = (_max - _mean)*(_max - _mean) / _norm;
+	coeff = 1/_norm;
 
 #pragma omp parallel for collapse(2) num_threads(thread_count) shared(coeff)
 	for (int i = 0; i < rows; i++) {
@@ -99,6 +97,20 @@ static void nrm(double** &arr, int rows, int cols, int thread_count){
 			arr[i][j] = coeff*arr[i][j];
 		}
 	}
+
+	 maxArray(arr, _max , rows, cols, thread_count);
+	meanArray(arr, _mean, rows, cols, thread_count);
+
+	coeff = (_max - _mean)*(_max - _mean);
+
+#pragma omp parallel for collapse(2) num_threads(thread_count) shared(coeff)
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++) {
+			arr[i][j] = coeff*arr[i][j];
+		}
+	}
+
+	
 }
 
 static double ** allocate(int rows, int cols) {

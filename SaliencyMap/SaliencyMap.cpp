@@ -50,17 +50,14 @@ void SaliencyMap::getData() {
 	padImg = cv::Mat(rows, cols, CV_8UC3);
 	int i, j, ip, jp;
 
-	int pad1R = (rows - rRows) / 2;
-	int pad1C = (cols - rCols) / 2;
+	pad1R = (rows - rRows) / 2;
+	pad1C = (cols - rCols) / 2;
 
-	int pad2R = pad1R + rRows;
-	int pad2C = pad1C + rCols;
+	pad2R = pad1R + rRows;
+	pad2C = pad1C + rCols;
 
 	int startR = pad2R - (rows - pad2R);
 	int startC = pad2C - (cols - pad2C);
-
-	startRealR = pad1R;
-	startRealC = pad1C;
 
 	// Copy image
 	for (i = 0, ip = pad1R;i < rRows;++i, ++ip) {
@@ -121,7 +118,6 @@ void SaliencyMap::getData() {
 	double r, g, b;
 	double aux;
 
-	//#   pragma omp parallel for collapse(2) num_threads(THREAD_COUNT)
 	for (i = 0; i < rows; i++) {
 		for (j = 0; j < cols; j++) {
 			Vec3b bgrPixel = padImg.at<Vec3b>(i, j);
@@ -174,9 +170,9 @@ void SaliencyMap::run() {
 	this->getMap(_Y, _Cmap, GAUSS_KERNEL);
 
 	// Print images
-	SaliencyMap::imshow(_Imap, rows / 4, cols / 4, "Mapa de Intensidad");
-	SaliencyMap::imshow(_Omap, rows / 4, cols / 4, "Mapa de Orientacion");
-	SaliencyMap::imshow(_Cmap, rows / 4, cols / 4, "Mapa de Color");
+	//SaliencyMap::imshow(_Imap, rows / 4, cols / 4, "Mapa de Intensidad");
+	//SaliencyMap::imshow(_Omap, rows / 4, cols / 4, "Mapa de Orientacion");
+	//SaliencyMap::imshow(_Cmap, rows / 4, cols / 4, "Mapa de Color");
 
 	this->getSalency();
 }
@@ -216,6 +212,7 @@ void SaliencyMap::getMap(double** &feature, double** &map, const double kernel[]
 	nrm(feat25, rows / 4, cols / 4, THREAD_COUNT);
 	nrm(feat26, rows / 4, cols / 4, THREAD_COUNT);
 
+#pragma omp parallel for collapse(2) num_threads(THREAD_COUNT)
 	for (int i = 0; i < rows / 4; i++) {
 		for (int j = 0; j < cols / 4; j++) {
 			map[i][j] += feat25[i][j] + feat26[i][j];
@@ -225,6 +222,7 @@ void SaliencyMap::getMap(double** &feature, double** &map, const double kernel[]
 	nrm(feat36, rows / 4, cols / 4, THREAD_COUNT);
 	nrm(feat37, rows / 4, cols / 4, THREAD_COUNT);
 
+#pragma omp parallel for collapse(2) num_threads(THREAD_COUNT)
 	for (int i = 0; i < rows / 4; i++) {
 		for (int j = 0; j < cols / 4; j++) {
 			map[i][j] += feat36[i][j] + feat37[i][j];
@@ -234,6 +232,7 @@ void SaliencyMap::getMap(double** &feature, double** &map, const double kernel[]
 	nrm(feat47, rows / 4, cols / 4, THREAD_COUNT);
 	nrm(feat48, rows / 4, cols / 4, THREAD_COUNT);
 
+#pragma omp parallel for collapse(2) num_threads(THREAD_COUNT)
 	for (int i = 0; i < rows / 4; i++) {
 		for (int j = 0; j < cols / 4; j++) {
 			map[i][j] += feat47[i][j] + feat48[i][j];
@@ -282,16 +281,49 @@ void SaliencyMap::absDifference(double** out, double** first, double** second, i
 
 
 void SaliencyMap::getSalency() {
-	double **saleny = allocate(rows / 4, cols / 4);
+	int i,j,ip,jp;
 
-	for (int i = 0; i < rows / 4; ++i) {
-		for (int j = 0; j < cols / 4; ++j) {
-			saleny[i][j] = _Imap[i][j] + _Omap[i][j] + _Cmap[i][j];
+	int local_pad1R = pad1R/4;
+	int local_pad1C = pad1C/4;
+	int local_pad2R = pad2R/4;
+	int local_pad2C = pad2C/4;
+
+	int local_rows = local_pad2R-local_pad1R;
+	int local_cols = local_pad2C-local_pad1C;
+
+	_Salency = allocate(local_rows, local_cols);
+
+	for (i=local_pad1R, ip=0; i < local_pad2R; ++i, ++ip) {
+		for (j=local_pad1C, jp=0; j < local_pad2C; ++j, ++jp) {
+			_Salency[ip][jp] = _Imap[i][j] + _Omap[i][j] + _Cmap[i][j];
+		}
+	}
+}
+
+void SaliencyMap::showSalency(){
+	int local_rows = (pad2R/4)-(pad1R/4);
+	int local_cols = (pad2C/4)-(pad1C/4);
+
+	double maxImg, minImg, coeff;
+
+	maxArray(_Salency, maxImg, local_rows, local_cols, THREAD_COUNT);
+	minArray(_Salency, minImg, local_rows, local_cols, THREAD_COUNT);
+
+	coeff = 255 / (maxImg - minImg);
+
+	Mat out = cv::Mat(local_rows, local_cols, CV_8UC1);
+
+	for (int i = 0; i < local_rows; i++) {
+		for (int j = 0; j < local_cols; j++) {
+			out.at<uchar>(i, j) = (uchar)(coeff*(_Salency[i][j] - minImg));
 		}
 	}
 
-	SaliencyMap::imshow(saleny, rows / 4, cols / 4, "Salency Map!!");
+	resize(out, out, Size(), 2, 2, INTER_LANCZOS4);
+
+	SaliencyMap::imshow(out, "Salency Map!!");
 }
+
 
 
 void SaliencyMap::imshow(double **img, int x_length, int y_length, std::string name = "Una ventana") {
@@ -315,8 +347,6 @@ void SaliencyMap::imshow(double **img, int x_length, int y_length, std::string n
 
 
 void SaliencyMap::imshow(Mat img, std::string name = "Una ventana") {
-	//Mat half( img.rows/2, img.cols/2,  img.type() );
-	//cv::resize(img,half,cv::Size(), 0.5, 0.5);
 	cv::imshow(name, img);
 	waitKey(0);
 }
