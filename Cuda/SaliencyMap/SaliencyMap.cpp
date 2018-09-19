@@ -129,31 +129,31 @@ void SaliencyMap::getData() {
 			r = (double)bgrPixel[2]; // R
 
 			aux = (r + g + b) / 3.0;
-			_I   [ j*rows + i ] = aux;	//(j)*(id) ) + (i)
-			_O0  [ j*rows + i ] = aux;
-			_O45 [ j*rows + i ] = aux;
-			_O90 [ j*rows + i ] = aux;
-			_O135[ j*rows + i ] = aux;
+			_I   [ i*cols + j ] = aux;	//(j)*(id) ) + (i)
+			_O0  [ i*cols + j ] = aux;
+			_O45 [ i*cols + j ] = aux;
+			_O90 [ i*cols + j ] = aux;
+			_O135[ i*cols + j ] = aux;
 
 			aux = r - (g + b) / 2.0;
-			_R[ j*rows + i ] = (aux > 0.0) ? aux : 0.0;
+			_R[ i*cols + j ] = (aux > 0.0) ? aux : 0.0;
 
 			aux = g - (b + r) / 2.0;
-			_G[ j*rows + i ] = (aux > 0.0) ? aux : 0.0;
+			_G[ i*cols + j ] = (aux > 0.0) ? aux : 0.0;
 
 			aux = b - (r + g) / 2.0;
-			_B[ j*rows + i ] = (aux > 0.0) ? aux : 0.0;
+			_B[ i*cols + j ] = (aux > 0.0) ? aux : 0.0;
 
 			aux = (r + g) / 2.0 - abs(r - g) / 2.0 - b;
-			_Y[ j*rows + i ] = (aux > 0.0) ? aux : 0.0;
+			_Y[ i*cols + j ] = (aux > 0.0) ? aux : 0.0;
 		}
 	}
 
 	for (i = 0; i < rows / 4; i++) {
 		for (j = 0; j < cols / 4; j++) {
-			_Imap[ j*rows + i ] = 0;
-			_Omap[ j*rows + i ] = 0;
-			_Cmap[ j*rows + i ] = 0;
+			_Imap[ i*cols + j ] = 0;
+			_Omap[ i*cols + j ] = 0;
+			_Cmap[ i*cols + j ] = 0;
 		}
 	}
 

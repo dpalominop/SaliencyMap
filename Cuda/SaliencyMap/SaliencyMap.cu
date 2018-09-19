@@ -24,6 +24,244 @@ void gpuFreeMalloc(double*& d_p){
  *  CPU Extra-functions
  *  ===================
  */
+__global__ void matInfinityNorm(double *device_InMat,double *device_InfinityNorm,
+                                int matRowSize, int matColSize, int threadDim){
+    int tidx = threadIdx.x;
+    int tidy = threadIdx.y;
+    int tindex = (threadDim * tidx) + tidy;
+    int maxNumThread = threadDim * threadDim; 
+    int pass = 0;  
+    int colCount, tCount ;
+    int curRowInd;
+    double tempInfinityNorm = 0.0;
+    double rowMaxValue = 0.0;
+      
+    for( tCount = 1; tCount < maxNumThread; tCount++)
+         device_InfinityNorm[tCount] = 0.0; 
+
+    while( (curRowInd = (tindex + maxNumThread * pass))  < matRowSize ){
+        rowMaxValue = 0.0;
+        for( colCount = 0; colCount < matColSize; colCount++)
+            rowMaxValue += abs(device_InMat[curRowInd* matRowSize + colCount]);
+        tempInfinityNorm = ( tempInfinityNorm>rowMaxValue? tempInfinityNorm:rowMaxValue);
+        pass++;
+    }
+
+    device_InfinityNorm[ tindex ] = tempInfinityNorm;
+     __syncthreads();
+   
+    if(tindex == 0){
+        for( tCount = 1; tCount < maxNumThread; tCount++)
+            device_InfinityNorm[0] = device_InfinityNorm[0]> device_InfinityNorm[tCount]? device_InfinityNorm[0]: device_InfinityNorm[tCount]; 
+    }
+}
+
+
+__global__ void meanMatrix(double *dMatrix, double *dMean, int dSize, int *d_mutex){
+    __shared__ double cache[threadsPerBlock];
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    int cacheIndex = threadIdx.x;
+    double temp = 0;
+    while (tid < dSize) {
+        temp += dMatrix[tid];
+        tid  += blockDim.x * gridDim.x;
+    }
+    // set the cache values
+    cache[cacheIndex] = temp;
+    // synchronize threads in this block
+    __syncthreads();
+
+    int i = blockDim.x/2;
+    while (i != 0) {
+        if (cacheIndex < i)
+            cache[cacheIndex] += cache[cacheIndex + i];
+        __syncthreads();
+        i /= 2;
+    }
+
+    if(cacheIndex == 0){
+		while(atomicCAS(d_mutex,0,1) != 0);  //lock
+		*dMean += cache[0];
+        atomicExch(d_mutex, 0);  //unlock
+        
+        *dMean = dMean[0]/dSize;
+	}
+}
+
+
+__global__ void find_maximum(double *array, double *max, int dSize, int *d_mutex){
+	int index = threadIdx.x + blockIdx.x*blockDim.x;
+	int stride = gridDim.x*blockDim.x;
+	int offset = 0;
+
+	__shared__ double cache[threadsPerBlock];
+
+	double temp = -999999999.0;
+	while(index + offset < dSize){
+        temp = fmaxf(temp, array[index + offset]);
+		offset += stride;
+	}
+
+	cache[threadIdx.x] = temp;
+
+	__syncthreads();
+
+
+	// reduction
+	unsigned int i = blockDim.x/2;
+	while(i != 0){
+		if(threadIdx.x < i){
+            cache[threadIdx.x] = fmax(cache[threadIdx.x], cache[threadIdx.x + i]);
+		}
+
+		__syncthreads();
+		i /= 2;
+	}
+
+    if(threadIdx.x == 0){
+		while(atomicCAS(d_mutex,0,1) != 0);  //lock
+		*max = fmax(*max, cache[0]);
+		atomicExch(d_mutex, 0);  //unlock
+	}
+}
+
+
+
+__global__ void applyNormSum(double *dMap,double *dSupFeature, double *dMaxSupFeature, double *dMeanSupFeature,
+                                          double *dInfFeature, double *dMaxInfFeature, double *dMeanInfFeature,
+                                          int dSize){
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+
+    double SupCoeff = (dMaxSupFeature[0] - dMeanSupFeature[0])*(dMaxSupFeature[0] - dMeanSupFeature[0]);
+    double InfCoeff = (dMaxInfFeature[0] - dMeanInfFeature[0])*(dMaxInfFeature[0] - dMeanInfFeature[0]);
+
+    while (tid < dSize) {
+        dMap[tid] += dSupFeature[tid]*SupCoeff + dInfFeature[tid]*InfCoeff;
+        tid  += blockDim.x * gridDim.x;
+    }
+}
+
+__global__ void absDifference(double *dDifference, double *dSup, double *dLow, int dSize){
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+
+    while (tid < dSize) {
+        double a = dSup[tid];
+        double b = dLow[tid];
+        dDifference[tid] = (a > b) ? (a - b) : (b - a);
+        tid  += blockDim.x * gridDim.x;
+    }
+}
+
+__global__ void sum3(double *d_result, 
+                double *d_a, double *d_b, double *d_c, 
+                int dSize){
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    while (tid < dSize) {
+        d_result[tid] = d_a[tid] + d_b[tid] +d_c[tid];
+        tid  += blockDim.x * gridDim.x;
+    }
+}
+
+__global__ void divScalarMatrix(double *dMatrix, double *dScalar, int dSize){
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    while (tid < dSize) {
+        dMatrix[tid] = dMatrix[tid]/dScalar[0];
+        tid  += blockDim.x * gridDim.x;
+    }
+}
+
+__global__ void kernelInterpolationRow(double *original, double *result, 
+                                       int rows, int cols, int factor){
+    int x = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = threadIdx.y + blockIdx.y * blockDim.y;
+    int offset = x +  y * blockDim.x * gridDim.x;
+
+    int idOriginal,idResult;
+
+    // Puntos de referencia para interpolacion
+    double a,b;
+    double   m; 
+
+    //
+    // Interpolacion de filas
+    // ----------------------
+    while (x < rows){
+        idOriginal = y*rows               + x       ;
+        idResult   = y*rows*factor*factor + x*factor;
+
+        a = original[ idOriginal    ];
+        b = original[ idOriginal + 1];
+
+        m = (b - a)/((double)factor);
+
+        // Antes de llegar al final
+        if (x != rows-1){
+            for(int p=0; p<=factor; ++p){
+                result[idResult] = a;
+                a += m;
+                ++idResult;
+            }
+        }
+        
+        // Borde final
+        else{
+            for(int p=0; p<factor; ++p){
+                result[idResult] = b;
+                b -= m;
+                ++idResult;
+            }
+        }
+
+    }
+
+}
+
+
+__global__ void kernelInterpolationCol(double *result, 
+                                       int rows, int cols, int factor){
+    int x = threadIdx.x + blockIdx.x * blockDim.x;
+    int y = threadIdx.y + blockIdx.y * blockDim.y;
+    int offset = x +  y * blockDim.x * gridDim.x;
+
+    int idOriginal,idResult;
+
+    // Puntos de referencia para interpolacion
+    double a,b;
+    double   m; 
+
+    //
+    // Interpolacion de columnas
+    // -------------------------
+    while (x < cols*factor && y<rows){
+        int trueY = y*factor;
+        int offset = x + trueY*cols*factor;
+
+        a = result[ offset                     ];
+        b = result[ offset + cols*factor*factor];
+
+        m = (b - a)/((double)factor);
+
+        // Antes de llegar al final
+        if (y != rows-1){
+            for(int p=0; p<=factor; ++p){
+                result[offset] = a;
+                a += m;
+                offset += cols*factor*factor;
+            }
+        }
+        
+        // Borde final
+        else{
+            for(int p=0; p<factor; ++p){
+                result[offset] = b;
+                b -= m;
+                offset += cols*factor*factor;
+            }
+        }
+    }
+
+}
+
 void getMap(double* &feature, double* &map, 
                         const double kernel[][5],
                         int rows, int cols) {
@@ -206,148 +444,16 @@ void getSalency(double* &salency,
                                            rows*cols);
 }
 
-__global__ void matInfinityNorm(double *device_InMat,double *device_InfinityNorm,
-                                int matRowSize, int matColSize, int threadDim){
-    int tidx = threadIdx.x;
-    int tidy = threadIdx.y;
-    int tindex = (threadDim * tidx) + tidy;
-    int maxNumThread = threadDim * threadDim; 
-    int pass = 0;  
-    int colCount, tCount ;
-    int curRowInd;
-    double tempInfinityNorm = 0.0;
-    double rowMaxValue = 0.0;
-      
-    for( tCount = 1; tCount < maxNumThread; tCount++)
-         device_InfinityNorm[tCount] = 0.0; 
 
-    while( (curRowInd = (tindex + maxNumThread * pass))  < matRowSize ){
-        rowMaxValue = 0.0;
-        for( colCount = 0; colCount < matColSize; colCount++)
-            rowMaxValue += abs(device_InMat[curRowInd* matRowSize + colCount]);
-        tempInfinityNorm = ( tempInfinityNorm>rowMaxValue? tempInfinityNorm:rowMaxValue);
-        pass++;
-    }
-
-    device_InfinityNorm[ tindex ] = tempInfinityNorm;
-     __syncthreads();
-   
-    if(tindex == 0){
-        for( tCount = 1; tCount < maxNumThread; tCount++)
-            device_InfinityNorm[0] = device_InfinityNorm[0]> device_InfinityNorm[tCount]? device_InfinityNorm[0]: device_InfinityNorm[tCount]; 
-    }
+void interpolation(double* &original, double* &result, 
+                   int rows, int cols, int factor){
+    
+    dim3 dimBlock(BLOCKSIZE,BLOCKSIZE);
+    dim3 dimGrid (rows/dimBlock.x,cols/dimBlock.y);	
+    
+    kernelInterpolationRow<<<dimGrid,dimBlock>>>(original,result,
+                                                 rows,cols,factor);
+    kernelInterpolationCol<<<dimGrid,dimBlock>>>(original,result,
+                                                 rows,cols,factor);
 }
 
-
-__global__ void meanMatrix(double *dMatrix, double *dMean, int dSize, int *d_mutex){
-    __shared__ double cache[threadsPerBlock];
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    int cacheIndex = threadIdx.x;
-    double temp = 0;
-    while (tid < dSize) {
-        temp += dMatrix[tid];
-        tid  += blockDim.x * gridDim.x;
-    }
-    // set the cache values
-    cache[cacheIndex] = temp;
-    // synchronize threads in this block
-    __syncthreads();
-
-    int i = blockDim.x/2;
-    while (i != 0) {
-        if (cacheIndex < i)
-            cache[cacheIndex] += cache[cacheIndex + i];
-        __syncthreads();
-        i /= 2;
-    }
-
-    if(cacheIndex == 0){
-		while(atomicCAS(d_mutex,0,1) != 0);  //lock
-		*dMean += cache[0];
-        atomicExch(d_mutex, 0);  //unlock
-        
-        *dMean = dMean[0]/dSize;
-	}
-}
-
-
-__global__ void find_maximum(double *array, double *max, int dSize, int *d_mutex){
-	int index = threadIdx.x + blockIdx.x*blockDim.x;
-	int stride = gridDim.x*blockDim.x;
-	int offset = 0;
-
-	__shared__ double cache[threadsPerBlock];
-
-	double temp = -999999999.0;
-	while(index + offset < dSize){
-        temp = fmaxf(temp, array[index + offset]);
-		offset += stride;
-	}
-
-	cache[threadIdx.x] = temp;
-
-	__syncthreads();
-
-
-	// reduction
-	unsigned int i = blockDim.x/2;
-	while(i != 0){
-		if(threadIdx.x < i){
-            cache[threadIdx.x] = fmax(cache[threadIdx.x], cache[threadIdx.x + i]);
-		}
-
-		__syncthreads();
-		i /= 2;
-	}
-
-    if(threadIdx.x == 0){
-		while(atomicCAS(d_mutex,0,1) != 0);  //lock
-		*max = fmax(*max, cache[0]);
-		atomicExch(d_mutex, 0);  //unlock
-	}
-}
-
-
-
-__global__ void applyNormSum(double *dMap,double *dSupFeature, double *dMaxSupFeature, double *dMeanSupFeature,
-                                          double *dInfFeature, double *dMaxInfFeature, double *dMeanInfFeature,
-                                          int dSize){
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-
-    double SupCoeff = (dMaxSupFeature[0] - dMeanSupFeature[0])*(dMaxSupFeature[0] - dMeanSupFeature[0]);
-    double InfCoeff = (dMaxInfFeature[0] - dMeanInfFeature[0])*(dMaxInfFeature[0] - dMeanInfFeature[0]);
-
-    while (tid < dSize) {
-        dMap[tid] += dSupFeature[tid]*SupCoeff + dInfFeature[tid]*InfCoeff;
-        tid  += blockDim.x * gridDim.x;
-    }
-}
-
-__global__ void absDifference(double *dDifference, double *dSup, double *dLow, int dSize){
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-
-    while (tid < dSize) {
-        double a = dSup[tid];
-        double b = dLow[tid];
-        dDifference[tid] = (a > b) ? (a - b) : (b - a);
-        tid  += blockDim.x * gridDim.x;
-    }
-}
-
-__global__ void sum3(double *d_result, 
-                double *d_a, double *d_b, double *d_c, 
-                int dSize){
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    while (tid < dSize) {
-        d_result[tid] = d_a[tid] + d_b[tid] +d_c[tid];
-        tid  += blockDim.x * gridDim.x;
-    }
-}
-
-__global__ void divScalarMatrix(double *dMatrix, double *dScalar, int dSize){
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    while (tid < dSize) {
-        dMatrix[tid] = dMatrix[tid]/dScalar[0];
-        tid  += blockDim.x * gridDim.x;
-    }
-}
