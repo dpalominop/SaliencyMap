@@ -35,7 +35,7 @@ int main(int argc, char **argv)
     Filter::showData(image, 16, 16);
 
     Filter filter(kernel);
-    filter.convolution(image, result, 16, 16, 1);
+    filter.convolution(image, result, 16, 16, 2);
     Filter::showData(result, 16, 16);
 
     Filter::deleteMemory(image, 16, 16);
