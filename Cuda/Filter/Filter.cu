@@ -56,7 +56,7 @@ __global__ void runConvolutionGPU(double* image, double* result, int height, int
 			}
 		}
 		if(row_o < height && col_o < width){
-			result[(row_o/step)*width/step+col_o/step] = output;
+			result[(row_o/step)*width/step+col_o/step] = output/9.0;
 		}
 	}
 }
