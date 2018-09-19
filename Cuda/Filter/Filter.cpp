@@ -50,10 +50,9 @@ bool Filter::setKernel(double** kernel, int n) {
 	return true;
 }
 
-bool Filter::convolution(double** image, double** result, int x_length, int y_length, int step)
+bool Filter::convolution(double* &image, double* &result, int x_length, int y_length, int step)
 {
 	convolutionGPU(image, result, x_length, y_length, step);
-
 	return true;
 }
 
@@ -107,12 +106,37 @@ bool Filter::generateData(double** &matrix, int x, int y) {
 	return false;
 }
 
+bool Filter::generateData(double* &matrix, int x, int y) {
+	srand(time(NULL));
+
+	for (int i = 0; i < x; i++) {
+		for (int j = 0; j < y; j++) {
+			matrix[i*y+j] = rand() % 3;
+		}
+	}
+
+	return false;
+}
+
 bool Filter::showData(double** result, int x, int y) {
 	for (int i = 0; i < x; i++)
 	{
 		for (int j = 0; j < y; j++)
 		{
 			std::cout << " " << result[i][j];
+		}
+		std::cout << std::endl;
+	}
+
+	return true;
+}
+
+bool Filter::showData(double* result, int x, int y) {
+	for (int i = 0; i < x; i++)
+	{
+		for (int j = 0; j < y; j++)
+		{
+			std::cout << " " << result[i*y+j];
 		}
 		std::cout << std::endl;
 	}

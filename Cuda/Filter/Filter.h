@@ -20,8 +20,8 @@
 extern "C" void setConvolutionKernel(double** h_Kernel);
 extern "C" void setConvolutionKernel2(double h_Kernel[KERNEL_LENGTH][KERNEL_LENGTH]);
 extern "C" void convolutionGPU(
-		double** image,
-		double** result,
+		double* image,
+		double* result,
 		int height,
 		int width,
 		int step);
@@ -43,14 +43,16 @@ public:
 	bool setKernel(double kernel[5][5]);
 	bool setKernel(double** kernel, int n);
 	//bool showKernel();
-	bool convolution(double** image, double** result, int x_length, int y_length, int step);
+	bool convolution(double* &image, double* &result, int x_length, int y_length, int step);
 
 //Static methods
 public:
 
 	static bool showData(double** result, int x, int y);
+	static bool showData(double* result, int x, int y);
 	static bool showData(double result[5][5], int x, int y);
 	static bool generateData(double** &matrix, int x, int y);
+	static bool generateData(double* &matrix, int x, int y);
 
 	static bool deleteMemory(double** &matrix, int x, int y);
 	static bool reserveMemory(double** &matrix, int x, int y);

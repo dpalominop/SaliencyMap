@@ -22,8 +22,8 @@ int main(int argc, char **argv)
     // start logs
     printf("[%s] - Starting...\n", argv[0]);
 
-    double** image;
-    double** result;
+    double* image;
+    double* result;
 
     Filter::reserveMemory(image, 16, 16);
     Filter::reserveMemory(result, 16, 16);
