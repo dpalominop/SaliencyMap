@@ -7,7 +7,6 @@ void SaliencyMap::getData() {
 		Get image
 		---------
 	 */
-	std::cout << "???? 1" << std::endl;
 	cv::Mat image, padImg;
 	image = cv::imread(_dir, CV_LOAD_IMAGE_COLOR);
 
@@ -16,7 +15,6 @@ void SaliencyMap::getData() {
 		return;
 	}
 
-	std::cout << "???? 2" << std::endl;
 	/*
 		Get size
 		--------
@@ -109,9 +107,9 @@ void SaliencyMap::getData() {
 	gpuHostAlloc(_R  ,rows, cols); gpuHostAlloc(_G   ,rows, cols);
 	gpuHostAlloc(_B  ,rows, cols); gpuHostAlloc(_Y   ,rows, cols);
 
-	gpuMalloc(_Imap,rows/4, cols/4);
-	gpuMalloc(_Cmap,rows/4, cols/4);
-	gpuMalloc(_Omap,rows/4, cols/4);
+	gpuMalloc(_Imap,rows/4, cols/4);	// To -> 0.0
+	gpuMalloc(_Cmap,rows/4, cols/4);	// To -> 0.0
+	gpuMalloc(_Omap,rows/4, cols/4);	// To -> 0.0
 
 	gpuHostAlloc(_Salency,rows/4, cols/4);
 
@@ -151,16 +149,14 @@ void SaliencyMap::getData() {
 			_Y[ i*cols + j ] = (aux > 0.0) ? aux : 0.0;
 		}
 	}
-
-	// for (i = 0; i < rows / 4; i++) {
-	// 	for (j = 0; j < cols / 4; j++) {
-	// 		std::cout << "?? index: " << ( i*cols/4 + j ) << std::endl;
-	// 		_Imap[ i*cols/4 + j ] = 0;
-	// 		_Omap[ i*cols/4 + j ] = 0;
-	// 		_Cmap[ i*cols/4 + j ] = 0;
-	// 	}
-	// }
-
+	/*
+	for (i = 0; i < rows; i++) {
+		for (j = 0; j < cols; j++) {
+			std::cout << _I[ j*rows + i ] << "\t";
+		}
+		std::cout << std::endl;
+	}
+	*/
 }
 
 
@@ -175,8 +171,9 @@ void SaliencyMap::run() {
 	getMap(_B,    _Cmap, GAUSS_KERNEL    ,rows,cols);
 	getMap(_Y,    _Cmap, GAUSS_KERNEL    ,rows,cols);
 
-	getSalency(_Salency, _Imap,_Omap,_Cmap,
-			   rows/4,cols/4);
+	gpuImshow(_Imap, rows/4, cols/4);
+
+	getSalency(_Salency, _Imap,_Omap,_Cmap,rows/4,cols/4);
 
 	gpuFreeHostAlloc(_I  );
 	gpuFreeHostAlloc(_R  ); gpuFreeHostAlloc(_G   ); 
@@ -196,6 +193,18 @@ void SaliencyMap::showSalency(){
 
 	maxArray(_Salency, maxImg, local_rows*local_cols, THREAD_COUNT);
 	minArray(_Salency, minImg, local_rows*local_cols, THREAD_COUNT);
+
+	std::cout << "En Saliency:" << std::endl;
+	std::cout << "min: " << minImg << ", max: " << maxImg << std::endl;
+
+/*
+	for (int i = 0; i < local_rows; i++) {
+		for (int j = 0; j < local_cols; j++) {
+			std::cout << _Salency[ j*rows/4 + i ] << "\t";
+		}
+		std::cout << std::endl;
+	}
+*/
 
 	coeff = 255 / (maxImg - minImg);
 

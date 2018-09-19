@@ -94,6 +94,8 @@ void getSalency(double* &salency,
 void gpuHostAlloc(double*& d_p, int rows, int cols);
 void gpuMalloc(double*& d_p, int rows, int cols);
 
+void gpuImshow(double *dImage, int rows, int cols);
+
 void gpuFreeHostAlloc(double*& d_p);
 void gpuFreeMalloc(double*& d_p);
 

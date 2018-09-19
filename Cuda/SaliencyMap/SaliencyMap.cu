@@ -10,8 +10,7 @@ void gpuHostAlloc(double*& d_p, int rows, int cols) {
 void gpuMalloc(double*& d_p, int rows, int cols){
     cudaMalloc((void**)&d_p, rows*cols*sizeof(double));
     double* h_matrix = new double[rows*cols];
-    for ( int p = 0; p < rows*cols; p++ )
-    {
+    for ( int p = 0; p < rows*cols; p++ ){
         h_matrix[p] = 0.0;
     }
     
@@ -25,6 +24,40 @@ void gpuFreeHostAlloc(double*& d_p){
 void gpuFreeMalloc(double*& d_p){
     cudaFree(d_p);
 }
+
+void gpuImshow(double *dImage, int rows, int cols){
+    double* h_matrix = new double[rows*cols];
+    cudaMemcpy( h_matrix, dImage, rows*cols*sizeof( double ), cudaMemcpyDeviceToHost );
+
+    for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++) {
+			std::cout << h_matrix[j + i*cols] << "\t";
+        }
+        std::cout << std::endl;
+	}
+
+    // Normalization
+    double maxImg, minImg, coeff;
+
+    maxArray(h_matrix, maxImg, rows*cols, THREAD_COUNT);
+	minArray(h_matrix, minImg, rows*cols, THREAD_COUNT);
+
+    std::cout << "En gpuImshow:" << std::endl;
+	std::cout << "min: " << minImg << ", max: " << maxImg << std::endl;
+
+    coeff = 255 / (maxImg - minImg);
+    Mat out = cv::Mat(rows, cols, CV_8UC1);
+
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++) {
+			out.at<uchar>(i, j) = (uchar)(coeff*(h_matrix[j + i*cols] - minImg));
+		}
+	}
+
+    cv::imshow("Ventana en GPU", out);
+	waitKey(0);
+}
+
 
 
 /*

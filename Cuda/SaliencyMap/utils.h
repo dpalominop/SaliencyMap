@@ -1,4 +1,3 @@
-
 #ifndef UTILS_H
 #define UTILS_H
 
@@ -29,7 +28,7 @@ static void maxArray(double **arr, double &maximum, int rows, int cols, int thre
 
 
 static void minArray(double *arr, double &minimum, int size, int thread_count) {
-	int i, j;
+	int i;
 	minimum = 99999999.999;
 
 #   pragma omp parallel for num_threads(thread_count) reduction(min:minimum)
@@ -39,7 +38,7 @@ static void minArray(double *arr, double &minimum, int size, int thread_count) {
 }
 
 static void maxArray(double *arr, double &maximum, int size, int thread_count) {
-	int i, j;
+	int i;
 	maximum = -99999999.999;
 
 #   pragma omp parallel for num_threads(thread_count) reduction(max:maximum)
