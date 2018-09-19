@@ -34,7 +34,7 @@
 ################################################################################
 
 # Location of the CUDA Toolkit
-CUDA_PATH ?= "/opt/cuda"
+CUDA_PATH ?= "/usr/local/cuda-9.0"
 
 ##############################
 # start deprecated interface #
@@ -284,7 +284,7 @@ else
 	@echo "Sample is ready - all dependencies have been met"
 endif
 
-kernels.o:Kernels.cu
+kernels.o:Filter.cu
 	$(EXEC) $(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
 	
 filter.o:Filter.cpp

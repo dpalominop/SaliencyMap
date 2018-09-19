@@ -1,3 +1,5 @@
+#include "Filter.h"
+
 // CUDA runtime
 #include <cuda_runtime.h>
 

@@ -15,17 +15,16 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "Constants.h"
-#include "Kernels.cu"
 
 
-/*extern "C" void setConvolutionKernel(double** h_Kernel);
+extern "C" void setConvolutionKernel(double** h_Kernel);
 extern "C" void setConvolutionKernel2(double h_Kernel[KERNEL_LENGTH][KERNEL_LENGTH]);
 extern "C" void convolutionGPU(
 		double** image,
 		double** result,
 		int height,
 		int width,
-		int step);*/
+		int step);
 
 #define ASSERT assert
 //#define length(x) (sizeof(x)/sizeof(x[0]))
@@ -61,5 +60,8 @@ public:
 	//static bool growthMatrix(double** matrix, int x, int y, double** result, int k, int thread_count);
 
 };
+
+
+
 
 #endif
