@@ -295,14 +295,14 @@ void getMap(double* &feature, double* &map,
     Filter blur(kernel);
 
     // Generate pyramid
-    blur.convolution( feature , rows    , cols    , dPyLevel1, 2, THREAD_COUNT);
-    blur.convolution(dPyLevel1, rows/2  , cols/2  , dPyLevel2, 2, THREAD_COUNT);
-    blur.convolution(dPyLevel2, rows/4  , cols/4  , dPyLevel3, 2, THREAD_COUNT);
-    blur.convolution(dPyLevel3, rows/8  , cols/8  , dPyLevel4, 2, THREAD_COUNT);
-    blur.convolution(dPyLevel4, rows/16 , cols/16 , dPyLevel5, 2, THREAD_COUNT);
-    blur.convolution(dPyLevel5, rows/32 , cols/32 , dPyLevel6, 2, THREAD_COUNT);
-    blur.convolution(dPyLevel6, rows/64 , cols/64 , dPyLevel7, 2, THREAD_COUNT);
-    blur.convolution(dPyLevel7, rows/128, cols/128, dPyLevel8, 2, THREAD_COUNT);
+    blur.convolution( feature , dPyLevel1, rows    , cols    , 2);
+    blur.convolution(dPyLevel1, dPyLevel2, rows/2  , cols/2  , 2);
+    blur.convolution(dPyLevel2, dPyLevel3, rows/4  , cols/4  , 2);
+    blur.convolution(dPyLevel3, dPyLevel4, rows/8  , cols/8  , 2);
+    blur.convolution(dPyLevel4, dPyLevel5, rows/16 , cols/16 , 2);
+    blur.convolution(dPyLevel5, dPyLevel6, rows/32 , cols/32 , 2);
+    blur.convolution(dPyLevel6, dPyLevel7, rows/64 , cols/64 , 2);
+    blur.convolution(dPyLevel7, dPyLevel8, rows/128, cols/128, 2);
 
     // Center-surround difference
     centerSurroundDiff(dPyLevel2, dPyLevel5, feat25, 2, 5, 2);
