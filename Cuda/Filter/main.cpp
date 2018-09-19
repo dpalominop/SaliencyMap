@@ -24,9 +24,10 @@ int main(int argc, char **argv)
 
     double* image;
     double* result;
+    double* extend;
 
     Filter::reserveMemory(image, 16, 16);
-    Filter::reserveMemory(result, 16, 16);
+    Filter::reserveMemory(result, 8, 8);
 
     double kernel[5*5] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
     Filter::showData(kernel, 5, 5);
@@ -36,10 +37,15 @@ int main(int argc, char **argv)
 
     Filter filter(kernel);
     filter.convolution(image, result, 16, 16, 2);
-    Filter::showData(result, 16, 16);
+    Filter::showData(result, 8, 8);
+
+    Filter::reserveMemory(extend, 16, 16);
+    Filter::growthMatrix(result, extend, 8, 8, 2);
+    Filter::showData(extend, 16, 16);
 
     Filter::deleteMemory(image, 16, 16);
     Filter::deleteMemory(result, 16, 16);
+    Filter::deleteMemory(extend, 16, 16);
 
     printf("Test passed\n");
     exit(EXIT_SUCCESS);

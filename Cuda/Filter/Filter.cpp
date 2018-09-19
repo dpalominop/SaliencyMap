@@ -174,38 +174,9 @@ bool Filter::showData(double result[5][5], int x, int y) {
 	return true;
 }*/
 
-/*bool Filter::growthMatrix(double** matrix, int x, int y, double** result, int k, int thread_count) {
-#pragma omp parallel for collapse(2) num_threads(thread_count) shared(matrix, result)
-	for (int i = 0; i < x; i++) {
-		for (int j = 0; j < y-1; j++) {
-			for (int p = 0; p < k; p++) {
-				result[i*k][j*k + p] = matrix[i][j] + p * ((matrix[i][j + 1] - matrix[i][j]) / k);
-			}
-		}
-	}
+bool Filter::growthMatrix(double* matrix, double* result, int height, int width, int k) {
 
-#pragma omp parallel for num_threads(thread_count) shared(matrix, result)
-	for (int i = 0; i < x; i++) {
-		for (int p = 0; p < k; p++) {
-			result[i*k][(y-1)*k + p] = matrix[i][y-1] + p * ((matrix[i][y - 1] - matrix[i][y - 2])/k);
-		}
-	}
-
-#pragma omp parallel for collapse(2) num_threads(thread_count) shared(matrix, result)
-	for (int i = 0; i < x-1; i++) {
-		for (int p = 1; p < k; p++) {
-			for (int j = 0; j < y*k; j ++) {
-				result[i*k+p][j] = matrix[i][j/k] + p * ((matrix[i+1][j/k] - matrix[i][j/k])/k);
-			}
-		}
-	}
-
-#pragma omp parallel for num_threads(thread_count) shared(matrix, result)
-	for (int p = 1; p < k; p++) {
-		for (int j = 0; j < y*k; j++) {
-			result[(x-1)*k + p][j] = matrix[x-1][j/k] + p * ((matrix[x-1][j/k] - matrix[x-2][j/k])/k);
-		}
-	}
+	growthMatrixGPU(matrix, result, height, width, k);
 
 	return true;
-}*/
+}

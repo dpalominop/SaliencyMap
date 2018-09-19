@@ -25,6 +25,7 @@ extern "C" void convolutionGPU(
 		int height,
 		int width,
 		int step);
+extern "C" void growthMatrixGPU(double* matrix, double* result, int height, int width, int k);
 
 #define ASSERT assert
 //#define length(x) (sizeof(x)/sizeof(x[0]))
@@ -59,7 +60,7 @@ public:
 	static bool deleteMemory(double* &matrix, int x, int y);
 	static bool reserveMemory(double* &matrix, int x, int y);
 
-	//static bool growthMatrix(double** matrix, int x, int y, double** result, int k, int thread_count);
+	static bool growthMatrix(double* matrix, double* result, int height, int width, int k);
 
 };
 
