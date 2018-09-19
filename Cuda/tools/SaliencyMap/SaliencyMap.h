@@ -14,7 +14,6 @@
 #include "kernel.h"
 #include "utils.h"
 #include "../Filter/Filter.h"
-#include "tools/SaliencyMap/SaliencyMap.h"
 
 
 #define NUMBER_OF_LEVELS 9

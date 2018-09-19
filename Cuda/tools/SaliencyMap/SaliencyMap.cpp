@@ -343,7 +343,6 @@ void SaliencyMapGPU::imshow(double **img, int x_length, int y_length, std::strin
 	}
 
 	SaliencyMapGPU::imshow(out, name);
-	map.showSalency();
 }
 
 

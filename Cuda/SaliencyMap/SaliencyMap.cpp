@@ -218,7 +218,9 @@ void SaliencyMap::showSalency(){
 
 	resize(out, out, Size(), 2, 2, INTER_LANCZOS4);
 
-	SaliencyMap::imshow(out, "Salency Map!!");
+	//SaliencyMap::imshow(out, "Salency Map!!");
+	SaliencyMapGPU map("images/oso.jpg");
+	map.showSalency();
 }
 
 
