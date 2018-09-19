@@ -262,22 +262,20 @@ __global__ void kernelInterpolationCol(double *result,
 
 }
 
-void getMap(double* &feature, double* &map, 
-                        const double kernel[][5],
+void getMap(double* &dFeature, double* &map, 
+                              double kernel[5*5],
                         int rows, int cols) {
     uint c;
-    float dNorm25 = 0.0f, dNorm26 = 0.0f; 
-    float dNorm36 = 0.0f, dNorm37 = 0.0f; 
-    float dNorm47 = 0.0f, dNorm48 = 0.0f; 
 
     // Allocate Host-Device
-    double *dFeature;
     double *dPyLevel1, *dPyLevel2;
     double *dPyLevel3, *dPyLevel4;
     double *dPyLevel5, *dPyLevel6;
     double *dPyLevel7, *dPyLevel8;
 
-    double *feat25, *feat36, *feat47;
+    double *feat25, *feat26, 
+           *feat36, *feat37, 
+           *feat47, *feat48;
 
     c =   4*  4; cudaMalloc(&dPyLevel2, rows*cols/c*sizeof(double));
     c =   8*  8; cudaMalloc(&dPyLevel3, rows*cols/c*sizeof(double));
@@ -287,15 +285,16 @@ void getMap(double* &feature, double* &map,
     c = 128*128; cudaMalloc(&dPyLevel7, rows*cols/c*sizeof(double));
     c = 256*256; cudaMalloc(&dPyLevel8, rows*cols/c*sizeof(double));
 
-    c = 4*4; cudaMalloc(&feat25, rows*cols/c*sizeof(double));
-    c = 4*4; cudaMalloc(&feat36, rows*cols/c*sizeof(double));
-    c = 4*4; cudaMalloc(&feat47, rows*cols/c*sizeof(double));
+    c = 4*4; 
+    cudaMalloc(&feat25, rows*cols/c*sizeof(double)); cudaMalloc(&feat26, rows*cols/c*sizeof(double));
+    cudaMalloc(&feat36, rows*cols/c*sizeof(double)); cudaMalloc(&feat37, rows*cols/c*sizeof(double));
+    cudaMalloc(&feat47, rows*cols/c*sizeof(double)); cudaMalloc(&feat48, rows*cols/c*sizeof(double));
 
     // Handles
     Filter blur(kernel);
 
     // Generate pyramid
-    blur.convolution( feature , dPyLevel1, rows    , cols    , 2);
+    blur.convolution(dFeature , dPyLevel1, rows    , cols    , 2);
     blur.convolution(dPyLevel1, dPyLevel2, rows/2  , cols/2  , 2);
     blur.convolution(dPyLevel2, dPyLevel3, rows/4  , cols/4  , 2);
     blur.convolution(dPyLevel3, dPyLevel4, rows/8  , cols/8  , 2);
@@ -305,14 +304,14 @@ void getMap(double* &feature, double* &map,
     blur.convolution(dPyLevel7, dPyLevel8, rows/128, cols/128, 2);
 
     // Center-surround difference
-    centerSurroundDiff(dPyLevel2, dPyLevel5, feat25, 2, 5, 2);
-    centerSurroundDiff(dPyLevel2, dPyLevel6, feat26, 2, 6, 2);
+    centerSurroundDiffGPU(dPyLevel2, dPyLevel5, feat25, 2, 5, 2,rows/4,cols/4);
+    centerSurroundDiffGPU(dPyLevel2, dPyLevel6, feat26, 2, 6, 2,rows/4,cols/4);
 
-    centerSurroundDiff(dPyLevel3, dPyLevel6, feat36, 3, 6, 2);
-    centerSurroundDiff(dPyLevel3, dPyLevel7, feat37, 3, 7, 2);
+    centerSurroundDiffGPU(dPyLevel3, dPyLevel6, feat36, 3, 6, 2,rows/4,cols/4);
+    centerSurroundDiffGPU(dPyLevel3, dPyLevel7, feat37, 3, 7, 2,rows/4,cols/4);
 
-    centerSurroundDiff(dPyLevel4, dPyLevel7, feat47, 4, 7, 2);
-    centerSurroundDiff(dPyLevel4, dPyLevel8, feat48, 4, 8, 2);
+    centerSurroundDiffGPU(dPyLevel4, dPyLevel7, feat47, 4, 7, 2,rows/4,cols/4);
+    centerSurroundDiffGPU(dPyLevel4, dPyLevel8, feat48, 4, 8, 2,rows/4,cols/4);
 
     // Free pyramid
     cudaFree(dPyLevel1); cudaFree(dPyLevel2);
@@ -321,10 +320,16 @@ void getMap(double* &feature, double* &map,
     cudaFree(dPyLevel7); cudaFree(dPyLevel8);
 
     // Normalizarion
-    c = 4*4;
-    nrmSumGPU(feat25,feat26,map,rows*cols/c);
-    nrmSumGPU(feat36,feat37,map,rows*cols/c);
-    nrmSumGPU(feat47,feat48,map,rows*cols/c);
+    c = 4;
+    nrmSumGPU(feat25,feat26,map,rows/c,cols/c);
+    nrmSumGPU(feat36,feat37,map,rows/c,cols/c);
+    nrmSumGPU(feat47,feat48,map,rows/c,cols/c);
+
+    /*
+    (double* &dProSupFeature, double* &dProInfFeature, 
+               double* &dMap,
+               int rows, int cols)
+    */
 
     // Free proto-feature
     cudaFree(feat25); cudaFree(feat26);
@@ -345,8 +350,7 @@ void centerSurroundDiffGPU(double* &dSupLevel, double* &dLowLevel,
     // Interpolation
     double* dLowLevelGrownUp;
     cudaMalloc(&dLowLevelGrownUp, supRow*supCol*sizeof(double));
-    Filter::growthMatrix(dLowLevel, lowRow, lowCol, 
-        dLowLevelGrownUp, pow2(low - sup));
+    interpolation(dLowLevel,dLowLevelGrownUp,lowRow, lowCol, pow2(low - sup));
 
     if (sup != endl) {
         double* dRawDifference;
@@ -354,8 +358,7 @@ void centerSurroundDiffGPU(double* &dSupLevel, double* &dLowLevel,
 
         absDifference<<<BlocksInGrid,threadsPerBlock>>>(dRawDifference, dSupLevel, 
                                      dLowLevelGrownUp, supRow*supCol);
-        Filter::growthMatrix(dRawDifference, supRow, supCol, 
-                dDifference, pow2(sup - endl));
+        interpolation(dRawDifference,dDifference,supRow, supCol, pow2(sup - endl));
 
         cudaFree(dRawDifference);
     }
@@ -372,6 +375,11 @@ void centerSurroundDiffGPU(double* &dSupLevel, double* &dLowLevel,
 void nrmSumGPU(double* &dProSupFeature, double* &dProInfFeature, 
                double* &dMap,
                int rows, int cols){
+    
+    // Mutex
+    int *d_mutex;
+    cudaMalloc((void**)&d_mutex, sizeof(int));
+
     //
     // Calculo de norma infinito
     // -------------------------
@@ -408,14 +416,20 @@ void nrmSumGPU(double* &dProSupFeature, double* &dProInfFeature,
     //
     // Maximum
     // -------
-    find_maximum(dProSupFeature, dMaxProSupFeature, rows*cols);
-    find_maximum(dProSupFeature, dMaxProInfFeature, rows*cols);
+    cudaMemset(d_mutex, 0, sizeof(int));
+    find_maximum<<<BlocksInGrid,threadsPerBlock>>>(dProSupFeature, dMaxProSupFeature, rows*cols, d_mutex);
+    cudaMemset(d_mutex, 0, sizeof(int));
+    find_maximum<<<BlocksInGrid,threadsPerBlock>>>(dProSupFeature, dMaxProInfFeature, rows*cols, d_mutex);
+
+   //__global__ void find_maximum(double *array, double *max, int dSize, int *d_mutex)
 
     //
     // Mean
     // ----
-    meanMatrix<<<BlocksInGrid,threadsPerBlock>>>(dProSupFeature, dMeanProSupFeature, rows*cols);
-    meanMatrix<<<BlocksInGrid,threadsPerBlock>>>(dProInfFeature, dMeanProInfFeature, rows*cols);
+    cudaMemset(d_mutex, 0, sizeof(int));
+    meanMatrix<<<BlocksInGrid,threadsPerBlock>>>(dProSupFeature, dMeanProSupFeature, rows*cols, d_mutex);
+    cudaMemset(d_mutex, 0, sizeof(int));
+    meanMatrix<<<BlocksInGrid,threadsPerBlock>>>(dProInfFeature, dMeanProInfFeature, rows*cols, d_mutex);
 
     //
     // Apply

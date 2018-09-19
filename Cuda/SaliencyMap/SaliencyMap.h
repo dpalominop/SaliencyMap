@@ -14,7 +14,7 @@
 #include "cublas_v2.h"
 #include "kernel.h"
 #include "utils.h"
-#include "../../OpenMP/Filter/Filter.h"
+#include "../Filter/Filter.h"
 
 #define NUMBER_OF_LEVELS 9
 #define THREAD_COUNT     1
@@ -54,12 +54,6 @@ private:
 	void getPyramids();
 	void reductionFeatures();
 
-	//void getMap(double* &feature, double* &map, const double kernel[][5]);
-	//void getSalency();
-
-	//void centerSurroundDiff(double** &supLevel, double** &infLevel, double ** &difference, int firstLevel, int secondLevel, int endLevel);
-	//void absDifference(double** out, double** first, double** second, int rows, int cols);
-
 	void imshow(Mat img, std::string name);
 	void imshow(double **img,int x_length, int y_length, std::string name);
 	
@@ -79,7 +73,7 @@ public:
 // GPU functions
 ////////////////////////////////////////////////////////////////////////////////
 void getMap(double* &feature, double* &map, 
-                       const double kernel[][5],
+                       double kernel[],
 					   int rows, int cols);
 void nrmSumGPU(double* &dProSupFeature, double* &dProInfFeature, 
 			   double* &dMap,
@@ -88,6 +82,9 @@ void centerSurroundDiffGPU(double* &dSupLevel, double* &dLowLevel,
                                       double* &dDifference, 
 									  int sup, int low, int endl,
 									  int rows, int cols);
+
+void interpolation(double* &original, double* &result, 
+                   int rows, int cols, int factor);
 
 void getSalency(double* &salency, 
                 double* &Imap, double* &Omap, double* &Cmap,
