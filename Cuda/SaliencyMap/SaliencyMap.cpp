@@ -1,10 +1,13 @@
 #include "SaliencyMap.h"
 
+#include <iostream>
+
 void SaliencyMap::getData() {
 	/*
 		Get image
 		---------
 	 */
+	std::cout << "???? 1" << std::endl;
 	cv::Mat image, padImg;
 	image = cv::imread(_dir, CV_LOAD_IMAGE_COLOR);
 
@@ -13,7 +16,7 @@ void SaliencyMap::getData() {
 		return;
 	}
 
-
+	std::cout << "???? 2" << std::endl;
 	/*
 		Get size
 		--------
@@ -149,13 +152,14 @@ void SaliencyMap::getData() {
 		}
 	}
 
-	for (i = 0; i < rows / 4; i++) {
-		for (j = 0; j < cols / 4; j++) {
-			_Imap[ i*cols + j ] = 0;
-			_Omap[ i*cols + j ] = 0;
-			_Cmap[ i*cols + j ] = 0;
-		}
-	}
+	// for (i = 0; i < rows / 4; i++) {
+	// 	for (j = 0; j < cols / 4; j++) {
+	// 		std::cout << "?? index: " << ( i*cols/4 + j ) << std::endl;
+	// 		_Imap[ i*cols/4 + j ] = 0;
+	// 		_Omap[ i*cols/4 + j ] = 0;
+	// 		_Cmap[ i*cols/4 + j ] = 0;
+	// 	}
+	// }
 
 }
 

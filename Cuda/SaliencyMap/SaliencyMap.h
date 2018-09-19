@@ -11,6 +11,7 @@
 #include <math.h>
 #include <omp.h>
 
+#include <cuda.h>
 #include "cublas_v2.h"
 #include "kernel.h"
 #include "utils.h"

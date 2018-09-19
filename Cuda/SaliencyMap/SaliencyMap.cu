@@ -9,6 +9,13 @@ void gpuHostAlloc(double*& d_p, int rows, int cols) {
 
 void gpuMalloc(double*& d_p, int rows, int cols){
     cudaMalloc((void**)&d_p, rows*cols*sizeof(double));
+    double* h_matrix = new double[rows*cols];
+    for ( int p = 0; p < rows*cols; p++ )
+    {
+        h_matrix[p] = 0.0;
+    }
+    
+    cudaMemcpy( (void**)&d_p, h_matrix, rows*cols*sizeof( double ), cudaMemcpyHostToDevice );
 }
 
 void gpuFreeHostAlloc(double*& d_p){
@@ -174,8 +181,7 @@ __global__ void kernelInterpolationRow(double *original, double *result,
                                        int rows, int cols, int factor){
     int x = threadIdx.x + blockIdx.x * blockDim.x;
     int y = threadIdx.y + blockIdx.y * blockDim.y;
-    int offset = x +  y * blockDim.x * gridDim.x;
-
+    
     int idOriginal,idResult;
 
     // Puntos de referencia para interpolacion
@@ -221,10 +227,7 @@ __global__ void kernelInterpolationCol(double *result,
                                        int rows, int cols, int factor){
     int x = threadIdx.x + blockIdx.x * blockDim.x;
     int y = threadIdx.y + blockIdx.y * blockDim.y;
-    int offset = x +  y * blockDim.x * gridDim.x;
-
-    int idOriginal,idResult;
-
+    
     // Puntos de referencia para interpolacion
     double a,b;
     double   m; 
@@ -467,7 +470,7 @@ void interpolation(double* &original, double* &result,
     
     kernelInterpolationRow<<<dimGrid,dimBlock>>>(original,result,
                                                  rows,cols,factor);
-    kernelInterpolationCol<<<dimGrid,dimBlock>>>(original,result,
+    kernelInterpolationCol<<<dimGrid,dimBlock>>>(result,
                                                  rows,cols,factor);
 }
 
