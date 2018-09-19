@@ -1,0 +1,4 @@
+/home/victor/Documentos/Programacion Paralela/Proyecto/SaliencyMap/Cuda/build/CMakeFiles/rebuild_cache.dir
+/home/victor/Documentos/Programacion Paralela/Proyecto/SaliencyMap/Cuda/build/CMakeFiles/SaliencyMapLibrary.dir
+/home/victor/Documentos/Programacion Paralela/Proyecto/SaliencyMap/Cuda/build/CMakeFiles/edit_cache.dir
+/home/victor/Documentos/Programacion Paralela/Proyecto/SaliencyMap/Cuda/build/CMakeFiles/main.dir

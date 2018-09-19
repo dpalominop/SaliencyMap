@@ -16,6 +16,7 @@
 #include "kernel.h"
 #include "utils.h"
 #include "../Filter/Filter.h"
+#include "/home/victor/Documentos/Programacion Paralela/Proyecto/SaliencyMap/Cuda/tools/SaliencyMap/SaliencyMap.h"
 
 #define NUMBER_OF_LEVELS 9
 #define THREAD_COUNT     1

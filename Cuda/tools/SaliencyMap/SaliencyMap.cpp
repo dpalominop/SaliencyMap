@@ -1,4 +1,4 @@
-#include "SaliencyMapGPU.h"
+#include "SaliencyMap.h"
 
 void SaliencyMapGPU::getData() {
 	/*
@@ -159,15 +159,15 @@ void SaliencyMapGPU::getData() {
 }
 
 void SaliencyMapGPU::run() {
-	this->getMap(_I, _Imap, GAUSS_KERNEL);
-	this->getMap(_O0, _Omap, GABOR_00_KERNEL);
-	this->getMap(_O45, _Omap, GABOR_45_KERNEL);
-	this->getMap(_O90, _Omap, GABOR_90_KERNEL);
-	this->getMap(_O135, _Omap, GABOR_135_KERNEL);
-	this->getMap(_R, _Cmap, GAUSS_KERNEL);
-	this->getMap(_G, _Cmap, GAUSS_KERNEL);
-	this->getMap(_B, _Cmap, GAUSS_KERNEL);
-	this->getMap(_Y, _Cmap, GAUSS_KERNEL);
+	this->getMap(_I, _Imap, GAUSS_KERNEL_GPU);
+	this->getMap(_O0, _Omap, GABOR_00_KERNEL_GPU);
+	this->getMap(_O45, _Omap, GABOR_45_KERNEL_GPU);
+	this->getMap(_O90, _Omap, GABOR_90_KERNEL_GPU);
+	this->getMap(_O135, _Omap, GABOR_135_KERNEL_GPU);
+	this->getMap(_R, _Cmap, GAUSS_KERNEL_GPU);
+	this->getMap(_G, _Cmap, GAUSS_KERNEL_GPU);
+	this->getMap(_B, _Cmap, GAUSS_KERNEL_GPU);
+	this->getMap(_Y, _Cmap, GAUSS_KERNEL_GPU);
 
 	// Print images
 	//SaliencyMapGPU::imshow(_Imap, rows / 4, cols / 4, "Mapa de Intensidad");
