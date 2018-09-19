@@ -24,7 +24,7 @@ Filter::~Filter() {
 	cudaFree(dev_kernel);*/
 }
 
-Filter::Filter(double kernel[5][5]) {
+Filter::Filter(double kernel[5*5]) {
 	/*cudaMalloc((void**)&dev_kernel, 5*sizeof(double));
 	for(int i=0; i<5; i++){
 		cudaMalloc((void**)&dev_kernel[i], 5*sizeof(double));
@@ -32,7 +32,7 @@ Filter::Filter(double kernel[5][5]) {
 	setKernel(kernel);
 }
 
-Filter::Filter(double** kernel, int n) {
+Filter::Filter(double* kernel, int n) {
 	/*cudaMalloc((void**)&dev_kernel, 5*sizeof(double));
 	for(int i=0; i<5; i++){
 		cudaMalloc((void**)&dev_kernel[i], 5*sizeof(double));
@@ -40,12 +40,12 @@ Filter::Filter(double** kernel, int n) {
 	setKernel(kernel, 5);
 }
 
-bool Filter::setKernel(double kernel[5][5]) {
+bool Filter::setKernel(double kernel[5*5]) {
 	setConvolutionKernel2(kernel);
 	return true;
 }
 
-bool Filter::setKernel(double** kernel, int n) {
+bool Filter::setKernel(double* kernel, int n) {
 	setConvolutionKernel(kernel);
 	return true;
 }

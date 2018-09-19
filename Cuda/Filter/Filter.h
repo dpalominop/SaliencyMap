@@ -17,8 +17,8 @@
 #include "Constants.h"
 
 
-extern "C" void setConvolutionKernel(double** h_Kernel);
-extern "C" void setConvolutionKernel2(double h_Kernel[KERNEL_LENGTH][KERNEL_LENGTH]);
+extern "C" void setConvolutionKernel(double* h_Kernel);
+extern "C" void setConvolutionKernel2(double h_Kernel[KERNEL_LENGTH*KERNEL_LENGTH]);
 extern "C" void convolutionGPU(
 		double* image,
 		double* result,
@@ -36,12 +36,12 @@ private:
 
 public:
 	Filter();
-	Filter(double kernel[5][5]);
-	Filter(double** kernel, int n);
+	Filter(double kernel[5*5]);
+	Filter(double* kernel, int n);
 	~Filter();
 
-	bool setKernel(double kernel[5][5]);
-	bool setKernel(double** kernel, int n);
+	bool setKernel(double kernel[5*5]);
+	bool setKernel(double* kernel, int n);
 	//bool showKernel();
 	bool convolution(double* &image, double* &result, int x_length, int y_length, int step);
 

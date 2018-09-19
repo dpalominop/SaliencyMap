@@ -28,7 +28,7 @@ int main(int argc, char **argv)
     Filter::reserveMemory(image, 16, 16);
     Filter::reserveMemory(result, 16, 16);
 
-    double kernel[5][5] = {{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1},{1,1,1,1,1}};
+    double kernel[5*5] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
     Filter::showData(kernel, 5, 5);
 
     Filter::generateData(image, 16, 16);
