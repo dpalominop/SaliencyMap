@@ -179,7 +179,7 @@ void SaliencyMapGPU::run() {
 
 void SaliencyMapGPU::getMap(double** &feature, double** &map, const double kernel[][5]) {
 	Pyramid py(rows, cols);
-	Filter blur(kernel);
+	FilterGPU blur(kernel);
 
 	// Generate pyramid
 	blur.convolution(feature, rows, cols, py._Level1, 2, THREAD_COUNT);
@@ -249,21 +249,21 @@ void SaliencyMapGPU::centerSurroundDiff(double** &supLevel, double** &lowLevel, 
 	int lowCol = cols / pow2(low);
 
 	double **growLowLevel = allocate(supRow, supCol);
-	Filter::growthMatrix(lowLevel, lowRow, lowCol, growLowLevel, pow2(low - sup), THREAD_COUNT);
+	FilterGPU::growthMatrix(lowLevel, lowRow, lowCol, growLowLevel, pow2(low - sup), THREAD_COUNT);
 
 	if (sup != endl) {
 		double **rawDifference = allocate(supRow, supCol);
 
 		absDifference(rawDifference, supLevel, growLowLevel, supRow, supCol);
-		Filter::growthMatrix(rawDifference, supRow, supCol, difference, pow2(sup - endl), THREAD_COUNT);
+		FilterGPU::growthMatrix(rawDifference, supRow, supCol, difference, pow2(sup - endl), THREAD_COUNT);
 
-		Filter::deleteMemory(rawDifference, supRow, supCol);
+		FilterGPU::deleteMemory(rawDifference, supRow, supCol);
 	}
 	else {
 		absDifference(difference, supLevel, growLowLevel, supRow, supCol);
 	}
 
-	Filter::deleteMemory(growLowLevel, supRow, supCol);
+	FilterGPU::deleteMemory(growLowLevel, supRow, supCol);
 }
 
 void SaliencyMapGPU::absDifference(double** out, double** first, double** second, int rows, int cols) {
