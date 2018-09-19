@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : GaussianBlur.cpp
+// Name        : Filter.cpp
 // Author      : Daniel Palomino
 // Version     : 1.0
 // Copyright   : GNU General Public License v3.0
