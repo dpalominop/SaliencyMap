@@ -24,7 +24,7 @@ Filter::~Filter() {
 	cudaFree(dev_kernel);*/
 }
 
-Filter::Filter(double kernel[5][5]) {
+Filter::Filter(double kernel[5*5]) {
 	/*cudaMalloc((void**)&dev_kernel, 5*sizeof(double));
 	for(int i=0; i<5; i++){
 		cudaMalloc((void**)&dev_kernel[i], 5*sizeof(double));
@@ -32,7 +32,7 @@ Filter::Filter(double kernel[5][5]) {
 	setKernel(kernel);
 }
 
-Filter::Filter(double** kernel, int n) {
+Filter::Filter(double* kernel, int n) {
 	/*cudaMalloc((void**)&dev_kernel, 5*sizeof(double));
 	for(int i=0; i<5; i++){
 		cudaMalloc((void**)&dev_kernel[i], 5*sizeof(double));
@@ -40,20 +40,19 @@ Filter::Filter(double** kernel, int n) {
 	setKernel(kernel, 5);
 }
 
-bool Filter::setKernel(double kernel[5][5]) {
+bool Filter::setKernel(double kernel[5*5]) {
 	setConvolutionKernel2(kernel);
 	return true;
 }
 
-bool Filter::setKernel(double** kernel, int n) {
+bool Filter::setKernel(double* kernel, int n) {
 	setConvolutionKernel(kernel);
 	return true;
 }
 
-bool Filter::convolution(double** image, double** result, int x_length, int y_length, int step)
+bool Filter::convolution(double* &image, double* &result, int x_length, int y_length, int step)
 {
 	convolutionGPU(image, result, x_length, y_length, step);
-
 	return true;
 }
 
@@ -107,12 +106,37 @@ bool Filter::generateData(double** &matrix, int x, int y) {
 	return false;
 }
 
+bool Filter::generateData(double* &matrix, int x, int y) {
+	srand(time(NULL));
+
+	for (int i = 0; i < x; i++) {
+		for (int j = 0; j < y; j++) {
+			matrix[i*y+j] = rand() % 3;
+		}
+	}
+
+	return false;
+}
+
 bool Filter::showData(double** result, int x, int y) {
 	for (int i = 0; i < x; i++)
 	{
 		for (int j = 0; j < y; j++)
 		{
 			std::cout << " " << result[i][j];
+		}
+		std::cout << std::endl;
+	}
+
+	return true;
+}
+
+bool Filter::showData(double* result, int x, int y) {
+	for (int i = 0; i < x; i++)
+	{
+		for (int j = 0; j < y; j++)
+		{
+			std::cout << " " << result[i*y+j];
 		}
 		std::cout << std::endl;
 	}
