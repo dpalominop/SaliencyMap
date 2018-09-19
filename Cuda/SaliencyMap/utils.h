@@ -27,6 +27,28 @@ static void maxArray(double **arr, double &maximum, int rows, int cols, int thre
 				maximum = arr[i][j];
 }
 
+
+static void minArray(double *arr, double &minimum, int size, int thread_count) {
+	int i, j;
+	minimum = 99999999.999;
+
+#   pragma omp parallel for num_threads(thread_count) reduction(min:minimum)
+	for (i = 0;i < size; i++)
+		if (arr[i] < minimum)
+			minimum = arr[i];
+}
+
+static void maxArray(double *arr, double &maximum, int size, int thread_count) {
+	int i, j;
+	maximum = -99999999.999;
+
+#   pragma omp parallel for num_threads(thread_count) reduction(max:maximum)
+	for (i = 0;i < size;i++)
+		if (arr[i] > maximum)
+			maximum = arr[i];
+}
+
+
 static void meanArray(double **arr, double &mean, int rows, int cols, int thread_count) {
 	int i, j;
 	mean = 0.0;
@@ -113,13 +135,6 @@ static void nrm(double** &arr, int rows, int cols, int thread_count){
 	
 }
 
-static double ** allocate(int rows, int cols) {
-	double ** dPointer = new double*[rows];
-	for (int i = 0; i < rows; ++i) {
-		dPointer[i] = new double[cols];
-	}
-	return dPointer;
-}
 
 static int pow2(int pot) {
 	int out = 1;

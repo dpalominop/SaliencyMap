@@ -11,13 +11,19 @@
 #include <math.h>
 #include <omp.h>
 
+#include "cublas_v2.h"
 #include "kernel.h"
 #include "utils.h"
-#include "../Filter/Filter.h"
-
+#include "../../OpenMP/Filter/Filter.h"
 
 #define NUMBER_OF_LEVELS 9
 #define THREAD_COUNT     1
+
+#define GRIDSIZE 10
+#define BLOCKSIZE 32
+
+#define threadsPerBlock 512
+#define BlocksInGrid    20
 
 using namespace cv;
 
@@ -25,16 +31,16 @@ class SaliencyMap
 {
 private:
 	// Image date
-	double **_R, **_G,
-		   **_B, **_Y;
-	double **_I,
-		   **_O0, **_O45,
-		   **_O90, **_O135;
+	double *_R, *_G,
+		   *_B, *_Y;
+	double *_I,
+		   *_O0,  *_O45,
+		   *_O90, *_O135;
 
-	double **_Imap, **_Omap,
-	       **_Cmap;
+	double *_Imap, *_Omap,
+	       *_Cmap;
 
-	double **_Salency;
+	double *_Salency;
 
 	std::string _dir;
 
@@ -48,14 +54,11 @@ private:
 	void getPyramids();
 	void reductionFeatures();
 
-	void getMap(double** &feature, double** &map, const double kernel[][5]);
-	void getSalency();
+	//void getMap(double* &feature, double* &map, const double kernel[][5]);
+	//void getSalency();
 
-	void reductionPyramid(double***pyramid, double **reduction);
-	void reductionPyramid(double***pyramid, double **reduction, int sup, int inf1, int inf2);
-	void centerSurroundDiff(double***pyramid, double** difference, int firstLevel, int secondLevel);
-	void centerSurroundDiff(double** &supLevel, double** &infLevel, double ** &difference, int firstLevel, int secondLevel, int endLevel);
-	void absDifference(double** out, double** first, double** second, int rows, int cols);
+	//void centerSurroundDiff(double** &supLevel, double** &infLevel, double ** &difference, int firstLevel, int secondLevel, int endLevel);
+	//void absDifference(double** out, double** first, double** second, int rows, int cols);
 
 	void imshow(Mat img, std::string name);
 	void imshow(double **img,int x_length, int y_length, std::string name);
@@ -71,5 +74,29 @@ public:
 
 	void setDirImage(std::string direction){ _dir = direction; }
 };
+
+////////////////////////////////////////////////////////////////////////////////
+// GPU functions
+////////////////////////////////////////////////////////////////////////////////
+void getMap(double* &feature, double* &map, 
+                       const double kernel[][5],
+					   int rows, int cols);
+void nrmSumGPU(double* &dProSupFeature, double* &dProInfFeature, 
+			   double* &dMap,
+			   int rows, int cols);
+void centerSurroundDiffGPU(double* &dSupLevel, double* &dLowLevel,
+                                      double* &dDifference, 
+									  int sup, int low, int endl,
+									  int rows, int cols);
+
+void getSalency(double* &salency, 
+                double* &Imap, double* &Omap, double* &Cmap,
+                int rows, int cols);
+
+void gpuHostAlloc(double*& d_p, int rows, int cols);
+void gpuMalloc(double*& d_p, int rows, int cols);
+
+void gpuFreeHostAlloc(double*& d_p);
+void gpuFreeMalloc(double*& d_p);
 
 #endif

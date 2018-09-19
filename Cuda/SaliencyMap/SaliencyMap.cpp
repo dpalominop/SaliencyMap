@@ -100,16 +100,17 @@ void SaliencyMap::getData() {
 	Inicialize
 	----------
  */
-	_I = allocate(rows, cols);
-	_O0 = allocate(rows, cols); _O45 = allocate(rows, cols);
-	_O90 = allocate(rows, cols); _O135 = allocate(rows, cols);
-	_R = allocate(rows, cols); _G = allocate(rows, cols);
-	_B = allocate(rows, cols); _Y = allocate(rows, cols);
+	gpuHostAlloc(_I  ,rows, cols);
+	gpuHostAlloc(_O0 ,rows, cols); gpuHostAlloc(_O45 ,rows, cols);
+	gpuHostAlloc(_O90,rows, cols); gpuHostAlloc(_O135,rows, cols);
+	gpuHostAlloc(_R  ,rows, cols); gpuHostAlloc(_G   ,rows, cols);
+	gpuHostAlloc(_B  ,rows, cols); gpuHostAlloc(_Y   ,rows, cols);
 
-	_Imap = allocate(rows / 4, cols / 4);
-	_Cmap = allocate(rows / 4, cols / 4);
-	_Omap = allocate(rows / 4, cols / 4);
+	gpuMalloc(_Imap,rows/4, cols/4);
+	gpuMalloc(_Cmap,rows/4, cols/4);
+	gpuMalloc(_Omap,rows/4, cols/4);
 
+	gpuHostAlloc(_Salency,rows/4, cols/4);
 
 	/*
 		Get features
@@ -128,177 +129,60 @@ void SaliencyMap::getData() {
 			r = (double)bgrPixel[2]; // R
 
 			aux = (r + g + b) / 3.0;
-			_I[i][j] = aux;
-			_O0[i][j] = aux;
-			_O45[i][j] = aux;
-			_O90[i][j] = aux;
-			_O135[i][j] = aux;
+			_I   [ j*rows + i ] = aux;	//(j)*(id) ) + (i)
+			_O0  [ j*rows + i ] = aux;
+			_O45 [ j*rows + i ] = aux;
+			_O90 [ j*rows + i ] = aux;
+			_O135[ j*rows + i ] = aux;
 
 			aux = r - (g + b) / 2.0;
-			_R[i][j] = (aux > 0.0) ? aux : 0.0;
+			_R[ j*rows + i ] = (aux > 0.0) ? aux : 0.0;
 
 			aux = g - (b + r) / 2.0;
-			_G[i][j] = (aux > 0.0) ? aux : 0.0;
+			_G[ j*rows + i ] = (aux > 0.0) ? aux : 0.0;
 
 			aux = b - (r + g) / 2.0;
-			_B[i][j] = (aux > 0.0) ? aux : 0.0;
+			_B[ j*rows + i ] = (aux > 0.0) ? aux : 0.0;
 
 			aux = (r + g) / 2.0 - abs(r - g) / 2.0 - b;
-			_Y[i][j] = (aux > 0.0) ? aux : 0.0;
+			_Y[ j*rows + i ] = (aux > 0.0) ? aux : 0.0;
 		}
 	}
 
 	for (i = 0; i < rows / 4; i++) {
 		for (j = 0; j < cols / 4; j++) {
-			_Imap[i][j] = 0;
-			_Omap[i][j] = 0;
-			_Cmap[i][j] = 0;
+			_Imap[ j*rows + i ] = 0;
+			_Omap[ j*rows + i ] = 0;
+			_Cmap[ j*rows + i ] = 0;
 		}
 	}
 
 }
+
 
 void SaliencyMap::run() {
-	this->getMap(_I, _Imap, GAUSS_KERNEL);
-	this->getMap(_O0, _Omap, GABOR_00_KERNEL);
-	this->getMap(_O45, _Omap, GABOR_45_KERNEL);
-	this->getMap(_O90, _Omap, GABOR_90_KERNEL);
-	this->getMap(_O135, _Omap, GABOR_135_KERNEL);
-	this->getMap(_R, _Cmap, GAUSS_KERNEL);
-	this->getMap(_G, _Cmap, GAUSS_KERNEL);
-	this->getMap(_B, _Cmap, GAUSS_KERNEL);
-	this->getMap(_Y, _Cmap, GAUSS_KERNEL);
+	getMap(_I,    _Imap, GAUSS_KERNEL    ,rows,cols);
+	getMap(_O0,   _Omap, GABOR_00_KERNEL ,rows,cols);
+	getMap(_O45,  _Omap, GABOR_45_KERNEL ,rows,cols);
+	getMap(_O90,  _Omap, GABOR_90_KERNEL ,rows,cols);
+	getMap(_O135, _Omap, GABOR_135_KERNEL,rows,cols);
+	getMap(_R,    _Cmap, GAUSS_KERNEL    ,rows,cols);
+	getMap(_G,    _Cmap, GAUSS_KERNEL    ,rows,cols);
+	getMap(_B,    _Cmap, GAUSS_KERNEL    ,rows,cols);
+	getMap(_Y,    _Cmap, GAUSS_KERNEL    ,rows,cols);
 
-	// Print images
-	//SaliencyMap::imshow(_Imap, rows / 4, cols / 4, "Mapa de Intensidad");
-	//SaliencyMap::imshow(_Omap, rows / 4, cols / 4, "Mapa de Orientacion");
-	//SaliencyMap::imshow(_Cmap, rows / 4, cols / 4, "Mapa de Color");
+	getSalency(_Salency, _Imap,_Omap,_Cmap,
+			   rows/4,cols/4);
 
-	this->getSalency();
+	gpuFreeHostAlloc(_I  );
+	gpuFreeHostAlloc(_R  ); gpuFreeHostAlloc(_G   ); 
+	gpuFreeHostAlloc(_B  ); gpuFreeHostAlloc(_Y   );
+	gpuFreeHostAlloc(_O0 ); gpuFreeHostAlloc(_O45 ); 
+	gpuFreeHostAlloc(_O90); gpuFreeHostAlloc(_O135);
+
+	gpuFreeMalloc(_Imap); gpuFreeMalloc(_Omap); gpuFreeMalloc(_Cmap);
 }
 
-void SaliencyMap::getMap(double** &feature, double** &map, const double kernel[][5]) {
-	Pyramid py(rows, cols);
-	Filter blur(kernel);
-
-	// Generate pyramid
-	blur.convolution(feature, rows, cols, py._Level1, 2, THREAD_COUNT);
-	blur.convolution(py._Level1, rows / 2, cols / 2, py._Level2, 2, THREAD_COUNT);
-	blur.convolution(py._Level2, rows / 4, cols / 4, py._Level3, 2, THREAD_COUNT);
-	blur.convolution(py._Level3, rows / 8, cols / 8, py._Level4, 2, THREAD_COUNT);
-	blur.convolution(py._Level4, rows / 16, cols / 16, py._Level5, 2, THREAD_COUNT);
-	blur.convolution(py._Level5, rows / 32, cols / 32, py._Level6, 2, THREAD_COUNT);
-	blur.convolution(py._Level6, rows / 64, cols / 64, py._Level7, 2, THREAD_COUNT);
-	blur.convolution(py._Level7, rows / 128, cols / 128, py._Level8, 2, THREAD_COUNT);
-
-	// Center-surround difference
-	double **feat25 = allocate(rows / 4, cols / 4), **feat26 = allocate(rows / 4, cols / 4);
-	double **feat36 = allocate(rows / 4, cols / 4), **feat37 = allocate(rows / 4, cols / 4);
-	double **feat47 = allocate(rows / 4, cols / 4), **feat48 = allocate(rows / 4, cols / 4);
-
-	centerSurroundDiff(py._Level2, py._Level5, feat25, 2, 5, 2);
-	centerSurroundDiff(py._Level2, py._Level6, feat26, 2, 6, 2);
-
-	centerSurroundDiff(py._Level3, py._Level6, feat36, 3, 6, 2);
-	centerSurroundDiff(py._Level3, py._Level7, feat37, 3, 7, 2);
-
-	centerSurroundDiff(py._Level4, py._Level7, feat47, 4, 7, 2);
-	centerSurroundDiff(py._Level4, py._Level8, feat48, 4, 8, 2);
-
-	// Clean Pyramid
-	py.clean();
-
-	// Normalizarion
-	nrm(feat25, rows / 4, cols / 4, THREAD_COUNT);
-	nrm(feat26, rows / 4, cols / 4, THREAD_COUNT);
-
-#pragma omp parallel for collapse(2) num_threads(THREAD_COUNT)
-	for (int i = 0; i < rows / 4; i++) {
-		for (int j = 0; j < cols / 4; j++) {
-			map[i][j] += feat25[i][j] + feat26[i][j];
-		}
-	}
-
-	nrm(feat36, rows / 4, cols / 4, THREAD_COUNT);
-	nrm(feat37, rows / 4, cols / 4, THREAD_COUNT);
-
-#pragma omp parallel for collapse(2) num_threads(THREAD_COUNT)
-	for (int i = 0; i < rows / 4; i++) {
-		for (int j = 0; j < cols / 4; j++) {
-			map[i][j] += feat36[i][j] + feat37[i][j];
-		}
-	}
-
-	nrm(feat47, rows / 4, cols / 4, THREAD_COUNT);
-	nrm(feat48, rows / 4, cols / 4, THREAD_COUNT);
-
-#pragma omp parallel for collapse(2) num_threads(THREAD_COUNT)
-	for (int i = 0; i < rows / 4; i++) {
-		for (int j = 0; j < cols / 4; j++) {
-			map[i][j] += feat47[i][j] + feat48[i][j];
-		}
-	}
-}
-
-
-void SaliencyMap::centerSurroundDiff(double** &supLevel, double** &lowLevel, double ** &difference, int sup, int low, int endl) {
-	int supRow = rows / pow2(sup);
-	int supCol = cols / pow2(sup);
-
-	int lowRow = rows / pow2(low);
-	int lowCol = cols / pow2(low);
-
-	double **growLowLevel = allocate(supRow, supCol);
-	Filter::growthMatrix(lowLevel, lowRow, lowCol, growLowLevel, pow2(low - sup), THREAD_COUNT);
-
-	if (sup != endl) {
-		double **rawDifference = allocate(supRow, supCol);
-
-		absDifference(rawDifference, supLevel, growLowLevel, supRow, supCol);
-		Filter::growthMatrix(rawDifference, supRow, supCol, difference, pow2(sup - endl), THREAD_COUNT);
-
-		Filter::deleteMemory(rawDifference, supRow, supCol);
-	}
-	else {
-		absDifference(difference, supLevel, growLowLevel, supRow, supCol);
-	}
-
-	Filter::deleteMemory(growLowLevel, supRow, supCol);
-}
-
-void SaliencyMap::absDifference(double** out, double** first, double** second, int rows, int cols) {
-	double a, b;
-
-#pragma omp parallel for collapse(2) num_threads(THREAD_COUNT)
-	for (int i = 0; i < rows; ++i) {
-		for (int j = 0; j < cols; ++j) {
-			a = first[i][j];
-			b = second[i][j];
-			out[i][j] = (a > b) ? (a - b) : (b - a);
-		}
-	}
-}
-
-
-void SaliencyMap::getSalency() {
-	int i,j,ip,jp;
-
-	int local_pad1R = pad1R/4;
-	int local_pad1C = pad1C/4;
-	int local_pad2R = pad2R/4;
-	int local_pad2C = pad2C/4;
-
-	int local_rows = local_pad2R-local_pad1R;
-	int local_cols = local_pad2C-local_pad1C;
-
-	_Salency = allocate(local_rows, local_cols);
-
-	for (i=local_pad1R, ip=0; i < local_pad2R; ++i, ++ip) {
-		for (j=local_pad1C, jp=0; j < local_pad2C; ++j, ++jp) {
-			_Salency[ip][jp] = _Imap[i][j] + _Omap[i][j] + _Cmap[i][j];
-		}
-	}
-}
 
 void SaliencyMap::showSalency(){
 	int local_rows = (pad2R/4)-(pad1R/4);
@@ -306,8 +190,8 @@ void SaliencyMap::showSalency(){
 
 	double maxImg, minImg, coeff;
 
-	maxArray(_Salency, maxImg, local_rows, local_cols, THREAD_COUNT);
-	minArray(_Salency, minImg, local_rows, local_cols, THREAD_COUNT);
+	maxArray(_Salency, maxImg, local_rows*local_cols, THREAD_COUNT);
+	minArray(_Salency, minImg, local_rows*local_cols, THREAD_COUNT);
 
 	coeff = 255 / (maxImg - minImg);
 
@@ -315,7 +199,7 @@ void SaliencyMap::showSalency(){
 
 	for (int i = 0; i < local_rows; i++) {
 		for (int j = 0; j < local_cols; j++) {
-			out.at<uchar>(i, j) = (uchar)(coeff*(_Salency[i][j] - minImg));
+			out.at<uchar>(i, j) = (uchar)(coeff*(_Salency[ j*rows/4 + i ] - minImg));
 		}
 	}
 
@@ -341,7 +225,7 @@ void SaliencyMap::imshow(double **img, int x_length, int y_length, std::string n
 			out.at<uchar>(i, j) = (uchar)(coeff*(img[i][j] - minImg));
 		}
 	}
-
+	
 	SaliencyMap::imshow(out, name);
 }
 
@@ -350,3 +234,4 @@ void SaliencyMap::imshow(Mat img, std::string name = "Una ventana") {
 	cv::imshow(name, img);
 	waitKey(0);
 }
+
