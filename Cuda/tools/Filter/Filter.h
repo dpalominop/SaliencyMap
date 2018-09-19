@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : Filter.h
+// Name        : FilterGPU.h
 // Author      : Daniel Palomino
 // Version     : 1.0
 // Copyright   : GNU General Public License v3.0
@@ -7,8 +7,8 @@
 // Created on  : 19 ago. 2018
 //============================================================================
 
-#ifndef FILTER_H
-#define FILTER_H
+#ifndef FilterGPU_H
+#define FilterGPU_H
 
 #include <cstdlib>
 #include <iostream>
@@ -21,17 +21,17 @@
 #define size_kernel dim_kernel*dim_kernel
 #define length(x) (sizeof(x)/sizeof(x[0]))
 
-class Filter {
+class FilterGPU {
 
 private:
 	double** mkernel;
 	int klength = dim_kernel;
 
 public:
-	Filter();
-	Filter(const double kernel[][dim_kernel]);
-	Filter(double** kernel, int n);
-	~Filter();
+	FilterGPU();
+	FilterGPU(const double kernel[][dim_kernel]);
+	FilterGPU(double** kernel, int n);
+	~FilterGPU();
 
 	bool setKernel(const double kernel[][dim_kernel]);
 	bool setKernel(double** kernel, int n);
