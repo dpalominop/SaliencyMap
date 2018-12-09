@@ -15,7 +15,7 @@ sudo apt-get update
 sudo apt-get install build-essential -y
 ```
 
-Instalar OPenCV 3.4.2
+Instalar OpenCV 3.4.2
 
 se puede seguir este manual: [OpenCV](https://linuxize.com/post/how-to-install-opencv-on-ubuntu-18-04/)
 
